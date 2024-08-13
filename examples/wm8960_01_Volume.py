@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 '''
-Demonstrates analog audio input, volume control, and headphone output on the  WM8960 Codec.
+Demonstrates analog audio input, volume control, and headphone output on the WM8960 Codec.
 
 Audio should be connected to both the left and right "INPUT3" inputs, they are labeled "RIN3" and "LIN3" on the board.
 
