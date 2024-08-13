@@ -407,7 +407,7 @@ class WM8960:
         # TODO: Check I2C or I2CDevice
         return True
     
-    def _getDivBit(self, src:int, dest:int):
+    def _getDivBit(self, src:int, dest:int) -> int:
         div = (src * 2) // dest
         if div < 2 or div > 12: return 0
         if div == 2: div = 0
@@ -417,48 +417,54 @@ class WM8960:
         if div % 2 == 1: return 0
         return div // 2
     
-    def configureI2S(self, sample_rate:int, word_length:int = WM8960_WL_16BIT, master:bool = False):
-        self.setSampleRate(sample_rate)
-        self.setWL(word_length)
+    def configureI2S(self, sample_rate:int, word_length:int = WM8960_WL_16BIT, master:bool = False) -> bool:
+        if not self.setSampleRate(sample_rate): return False
+        if not self.setWL(word_length): return False
         if master:
-            self.enableMasterMode()
-            self.setALRCGPIO() # Note, should not be changed while ADC is enabled.
+            if not self.enableMasterMode(): return False
+            if not self.setALRCGPIO(): return False # Note, should not be changed while ADC is enabled.
         else:
-            self.enablePeripheralMode()
+            if not self.enablePeripheralMode(): return False
+        return True
     
-    def configureDAC(self, loopback:bool = False):
+    def configureDAC(self, loopback:bool = False) -> bool:
         # Connect from DAC outputs to output mixer
-        self.enableD2O()
+        if not self.enableD2O(): return False
         # Enable output mixers
-        self.enableOMIX()
+        if not self.enableOMIX(): return False
         # Enable DACs
-        self.enableDac()
+        if not self.enableDac(): return False
         # Default is "soft mute" on, so we must disable mute to make channels active
-        self.disableDacMute()
+        if not self.disableDacMute(): return False
 
         # Loopback sends ADC data directly into DAC
         if loopback:
-            self.enableLoopBack()
+            if not self.enableLoopBack(): return False
         else:
-            self.disableLoopBack()
-    
-    def configureHeadphones(self, dB:float = 0.0, capless:bool = True):
-        # Enable headphone output
-        self.enableHeadphones()
-        # Provides VMID as buffer for headphone ground on OUT3
-        if capless: self.enableOUT3MIX()
-        # Adjust headphone volume
-        self.setHeadphoneVolumeDB(dB)
-    
-    def configureSpeakers(self, dB:float = 0.0):
-        # Enable speaker output
-        self.enableSpeakers()
-        # Adjust speaker volume
-        self.setSpeakerVolumeDB(dB)
+            if not self.disableLoopBack(): return False
 
-    def setSampleRate(self, sample_rate:int):
+        return True
+    
+    def configureHeadphones(self, dB:float = 0.0, capless:bool = True) -> bool:
+        # Enable headphone output
+        if not self.enableHeadphones(): return False
+        # Provides VMID as buffer for headphone ground on OUT3
+        if capless:
+            if not self.enableOUT3MIX(): return False
+        # Adjust headphone volume
+        if not self.setHeadphoneVolumeDB(dB): return False
+        return True
+    
+    def configureSpeakers(self, dB:float = 0.0) -> bool:
+        # Enable speaker output
+        if not self.enableSpeakers(): return False
+        # Adjust speaker volume
+        if not self.setSpeakerVolumeDB(dB): return False
+        return True
+
+    def setSampleRate(self, sample_rate:int) -> bool:
         # MCLK = 24 MHz
-        self.enablePLL() # Needed for class-d amp clock
+        if not self.enablePLL(): return False # Needed for class-d amp clock
         self.setSMD(WM8960_PLL_MODE_FRACTIONAL)
         self.setCLKSEL(WM8960_CLKSEL_PLL)
 
@@ -488,6 +494,8 @@ class WM8960:
             self.setDACDIV(div)
         else:
             raise Exception("Invalid sample rate")
+        
+        return True
 
     '''
     Necessary for all other functions of the CODEC
@@ -495,8 +503,8 @@ class WM8960:
     VREF is bit 6, 0 = power down, 1 = power up
     Returns 1 if successful, 0 if something failed (I2C error)
     '''
-    def enableVREF(self) -> None:
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 6, 1)
+    def enableVREF(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 6, 1)
 
     '''
     Use this to save power
@@ -504,67 +512,62 @@ class WM8960:
     VREF is bit 6, 0 = power down, 1 = power up
     Returns 1 if successful, 0 if something failed (I2C error)
     '''
-    def disableVREF(self) -> None:
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 6, 0)
+    def disableVREF(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 6, 0)
 
     # Resets all registers to their default state
-    def reset(self) -> None:
+    def reset(self) -> bool:
         # Doesn't matter which bit we flip, writing anything will cause the reset
-        self._writeRegisterBit(WM8960_REG_RESET, 7, 1)
+        if not self._writeRegisterBit(WM8960_REG_RESET, 7, 1): return False
         # Update our local copy of the registers to reflect the reset
         for i in range(len(WM8960_REGISTER_DEFAULTS)):
             self._registerLocalCopy[i] = WM8960_REGISTER_DEFAULTS[i]
+        return True
 
-    def enableAINL(self) -> None:
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 5, 1)
-    def disableAINL(self) -> None:
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 5, 0)
+    def enableAINL(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 5, 1)
+    def disableAINL(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 5, 0)
 
-    def enableAINR(self) -> None:
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 4, 1)
-    def disableAINR(self) -> None:
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 4, 0)
+    def enableAINR(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 4, 1)
+    def disableAINR(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 4, 0)
 
-    def enableAIN(self) -> None:
-        self.enableAINL()
-        self.enableAINR()
-    def disableAIN(self) -> None:
-        self.disableAINL()
-        self.disableAINR()
+    def enableAIN(self) -> bool:
+        return self.enableAINL() and self.enableAINR()
+    def disableAIN(self) -> bool:
+        return self.disableAINL() and self.disableAINR()
 
-    def enableLMIC(self) -> None:
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 5, 1)
-    def disableLMIC(self) -> None:
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 5, 0)
+    def enableLMIC(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 5, 1)
+    def disableLMIC(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 5, 0)
 
-    def enableRMIC(self) -> None:
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 4, 1)
-    def disableRMIC(self) -> None:
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 4, 0)
+    def enableRMIC(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 4, 1)
+    def disableRMIC(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 4, 0)
 
-    def enableMIC(self) -> None:
-        self.enableLMIC()
-        self.enableRMIC()
-    def disableMIC(self) -> None:
-        self.disableLMIC()
-        self.disableRMIC()
+    def enableMIC(self) -> bool:
+        return self.enableLMIC() and self.enableRMIC()
+    def disableMIC(self) -> bool:
+        return self.disableLMIC() and self.disableRMIC()
 
-    def enableLMICBOOST(self) -> None:
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 5, 1)
-    def disableLMICBOOST(self) -> None:
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 5, 0)
+    def enableLMICBOOST(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 5, 1)
+    def disableLMICBOOST(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 5, 0)
 
-    def enableRMICBOOST(self) -> None:
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 4, 1)
-    def disableRMICBOOST(self) -> None:
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 4, 0)
+    def enableRMICBOOST(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 4, 1)
+    def disableRMICBOOST(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 4, 0)
 
-    def enableMICBOOST(self) -> None:
-        self.enableLMICBOOST()
-        self.enableRMICBOOST()
-    def disableMICBOOST(self) -> None:
-        self.disableLMICBOOST()
-        self.disableRMICBOOST()
+    def enableMICBOOST(self) -> bool:
+        return self.enableLMICBOOST() and self.enableRMICBOOST()
+    def disableMICBOOST(self) -> bool:
+        return self.disableLMICBOOST() and self.disableRMICBOOST()
 
     # PGA input signal select
     # Each PGA (left and right) has a switch on its non-inverting input.
@@ -578,7 +581,7 @@ class WM8960:
     # RINPUT1
 
     # 3 options: WM8960_PGAL_LINPUT2, WM8960_PGAL_LINPUT3, WM8960_PGAL_VMID
-    def pgaLeftNonInvSignalSelect(self, signal:int):
+    def pgaLeftNonInvSignalSelect(self, signal:int) -> bool:
         '''
         Clear LMP2 and LMP3
         Necessary because the previous setting could have either set,
@@ -587,23 +590,25 @@ class WM8960:
         '''
 
         # LMP3
-        self._writeRegisterBit(WM8960_REG_ADCL_SIGNAL_PATH, 7, 0)
+        if not self._writeRegisterBit(WM8960_REG_ADCL_SIGNAL_PATH, 7, 0): return False
 
         # LMP2
-        self._writeRegisterBit(WM8960_REG_ADCL_SIGNAL_PATH, 6, 0)
+        if not self._writeRegisterBit(WM8960_REG_ADCL_SIGNAL_PATH, 6, 0): return False
 
         if signal == WM8960_PGAL_LINPUT2:
             # LMP2
-            self._writeRegisterBit(WM8960_REG_ADCL_SIGNAL_PATH, 6, 1)
+            return self._writeRegisterBit(WM8960_REG_ADCL_SIGNAL_PATH, 6, 1)
         elif signal == WM8960_PGAL_LINPUT3:
             # LMP3
-            self._writeRegisterBit(WM8960_REG_ADCL_SIGNAL_PATH, 7, 1)
+            return self._writeRegisterBit(WM8960_REG_ADCL_SIGNAL_PATH, 7, 1)
         elif signal == WM8960_PGAL_VMID:
             # Don't set any bits. When both LMP2 and LMP3 are cleared, then the signal is set to VMID
-            pass
+            return True
+        else:
+            raise Exception("Invalid PGA signal select")
 
     # 3 options: WM8960_PGAR_RINPUT2, WM8960_PGAR_RINPUT3, WM8960_PGAR_VMID
-    def pgaRightNonInvSignalSelect(self, signal:int):
+    def pgaRightNonInvSignalSelect(self, signal:int) -> bool:
         '''
         Clear RMP2 and RMP3
         Necessary because the previous setting could have either set,
@@ -612,83 +617,80 @@ class WM8960:
         '''
 
         # RMP3
-        self._writeRegisterBit(WM8960_REG_ADCR_SIGNAL_PATH, 7, 0)
+        if not self._writeRegisterBit(WM8960_REG_ADCR_SIGNAL_PATH, 7, 0): return False
 
         # RMP2
-        self._writeRegisterBit(WM8960_REG_ADCR_SIGNAL_PATH, 6, 0)
+        if not self._writeRegisterBit(WM8960_REG_ADCR_SIGNAL_PATH, 6, 0): return False
 
         if signal == WM8960_PGAR_RINPUT2:
             # RMP2
-            self._writeRegisterBit(WM8960_REG_ADCR_SIGNAL_PATH, 6, 1)
+            return self._writeRegisterBit(WM8960_REG_ADCR_SIGNAL_PATH, 6, 1)
         elif signal == WM8960_PGAR_RINPUT3:
             # RMP3
-            self._writeRegisterBit(WM8960_REG_ADCR_SIGNAL_PATH, 7, 1)
+            return self._writeRegisterBit(WM8960_REG_ADCR_SIGNAL_PATH, 7, 1)
         elif signal == WM8960_PGAR_VMID:
             # Don't set any bits. When both RMP2 and RMP3 are cleared, then the signal is set to VMID
-            pass
+            return True
+        else:
+            raise Exception("Invalid PGA signal select")
 
     # 3 options: WM8960_PGA_INPUT2, WM8960_PGA_INPUT3, WM8960_PGA_VMID
-    def pgaNonInvSignalSelect(self, signal:int):
-        self.pgaLeftNonInvSignalSelect(signal)
-        self.pgaRightNonInvSignalSelect(signal)
+    def pgaNonInvSignalSelect(self, signal:int) -> bool:
+        return self.pgaLeftNonInvSignalSelect(signal) and self.pgaRightNonInvSignalSelect(signal)
 
     # Connections from each INPUT1 to the inverting input of its PGA
 
     # Connect LINPUT1 to inverting input of Left Input PGA
-    def connectLMN1(self):
-        self._writeRegisterBit(WM8960_REG_ADCL_SIGNAL_PATH, 8, 1)
+    def connectLMN1(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_ADCL_SIGNAL_PATH, 8, 1)
 
     # Disconnect LINPUT1 from inverting input of Left Input PGA
-    def disconnectLMN1(self):
-        self._writeRegisterBit(WM8960_REG_ADCL_SIGNAL_PATH, 8, 0)
+    def disconnectLMN1(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_ADCL_SIGNAL_PATH, 8, 0)
 
     # Connect RINPUT1 to inverting input of Right Input PGA
-    def connectRMN1(self):
-        self._writeRegisterBit(WM8960_REG_ADCR_SIGNAL_PATH, 8, 1)
+    def connectRMN1(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_ADCR_SIGNAL_PATH, 8, 1)
 
     # Disconnect RINPUT1 from inverting input of Right Input PGA
-    def disconnectRMN1(self):
-        self._writeRegisterBit(WM8960_REG_ADCR_SIGNAL_PATH, 8, 0)
+    def disconnectRMN1(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_ADCR_SIGNAL_PATH, 8, 0)
 
-    def connectMN1(self):
-        self.connectLMN1()
-        self.connectRMN1()
-    def disconnectMN1(self):
-        self.disconnectLMN1()
-        self.disconnectRMN1()
+    def connectMN1(self) -> bool:
+        return self.connectLMN1() and self.connectRMN1()
+    def disconnectMN1(self) -> bool:
+        return self.disconnectLMN1() and self.disconnectRMN1()
     
     # Connection from output of PGAs to downstream "boost mixers"
 
     # Connect Left Input PGA to Left Input Boost mixer
-    def connectLMIC2B(self):
-        self._writeRegisterBit(WM8960_REG_ADCL_SIGNAL_PATH, 3, 1)
+    def connectLMIC2B(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_ADCL_SIGNAL_PATH, 3, 1)
 
     # Disconnect Left Input PGA to Left Input Boost mixer
-    def disconnectLMIC2B(self):
-        self._writeRegisterBit(WM8960_REG_ADCL_SIGNAL_PATH, 3, 0)
+    def disconnectLMIC2B(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_ADCL_SIGNAL_PATH, 3, 0)
 
     # Connect Right Input PGA to Right Input Boost mixer
-    def connectRMIC2B(self):
-        self._writeRegisterBit(WM8960_REG_ADCR_SIGNAL_PATH, 3, 1)
+    def connectRMIC2B(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_ADCR_SIGNAL_PATH, 3, 1)
 
     # Disconnect Right Input PGA to Right Input Boost mixer
-    def disconnectRMIC2B(self):
-        self._writeRegisterBit(WM8960_REG_ADCR_SIGNAL_PATH, 3, 0)
+    def disconnectRMIC2B(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_ADCR_SIGNAL_PATH, 3, 0)
 
-    def connectMIC2B(self):
-        self.connectLMIC2B()
-        self.connectRMIC2B()
-    def disconnectMIC2B(self):
-        self.disconnectLMIC2B()
-        self.disconnectRMIC2B()
+    def connectMIC2B(self) -> bool:
+        return self.connectLMIC2B() and self.connectRMIC2B()
+    def disconnectMIC2B(self) -> bool:
+        return self.disconnectLMIC2B() and self.disconnectRMIC2B()
 
     # 0-63, (0 = -17.25dB) <<-- 0.75dB steps -->> (63 = +30dB)
-    def setLINVOL(self, volume:int):
+    def setLINVOL(self, volume:int) -> bool:
         # Limit incoming values max
         if volume > 63:
             volume = 63
-        self._writeRegisterMultiBits(WM8960_REG_LEFT_INPUT_VOLUME, 5, 0, volume)
-        self.pgaLeftIPVUSet()
+        if not self._writeRegisterMultiBits(WM8960_REG_LEFT_INPUT_VOLUME, 5, 0, volume): return False
+        return self.pgaLeftIPVUSet()
 
     '''
     Sets the volume of the PGA input buffer amp to a specified dB value 
@@ -698,18 +700,18 @@ class WM8960:
     ... 0.75dB steps ...
     30.00 = +30.00dB  (MAX)
     '''
-    def setLINVOLDB(self, dB:float):
+    def setLINVOLDB(self, dB:float) -> bool:
         # Create an unsigned integer volume setting variable we can send to setLINVOL()
         volume = self.convertDBtoSetting(dB, WM8960_PGA_GAIN_OFFSET, WM8960_PGA_GAIN_STEPSIZE, WM8960_PGA_GAIN_MIN, WM8960_PGA_GAIN_MAX)
-        self.setLINVOL(volume)
+        return self.setLINVOL(volume)
 
     # 0-63, (0 = -17.25dB) <<-- 0.75dB steps -->> (63 = +30dB)
-    def setRINVOL(self, volume:int):
+    def setRINVOL(self, volume:int) -> bool:
         # Limit incoming values max
         if volume > 63:
             volume = 63
-        self._writeRegisterMultiBits(WM8960_REG_RIGHT_INPUT_VOLUME, 5, 0, volume)
-        self.pgaRightIPVUSet()
+        if not self._writeRegisterMultiBits(WM8960_REG_RIGHT_INPUT_VOLUME, 5, 0, volume): return False
+        return self.pgaRightIPVUSet()
 
     '''
     Sets the volume of the PGA input buffer amp to a specified dB value 
@@ -719,144 +721,131 @@ class WM8960:
     ... 0.75dB steps ...
     30.00 = +30.00dB  (MAX)
     '''
-    def setRINVOLDB(self, dB:float):
+    def setRINVOLDB(self, dB:float) -> bool:
         # Create an unsigned integer volume setting variable we can send to setLINVOL()
         volume = self.convertDBtoSetting(dB, WM8960_PGA_GAIN_OFFSET, WM8960_PGA_GAIN_STEPSIZE, WM8960_PGA_GAIN_MIN, WM8960_PGA_GAIN_MAX)
-        self.setRINVOL(volume)
+        return self.setRINVOL(volume)
 
-    def setINVOL(self, volume:int):
-        self.setLINVOL(volume)
-        self.setRINVOL(volume)
+    def setINVOL(self, volume:int) -> bool:
+        return self.setLINVOL(volume) and self.setRINVOL(volume)
 
-    def setINVOLDB(self, dB:float):
+    def setINVOLDB(self, dB:float) -> bool:
         # Create an unsigned integer volume setting variable we can send to setLINVOL()
         volume = self.convertDBtoSetting(dB, WM8960_PGA_GAIN_OFFSET, WM8960_PGA_GAIN_STEPSIZE, WM8960_PGA_GAIN_MIN, WM8960_PGA_GAIN_MAX)
-        self.setLINVOL(volume)
-        self.setRINVOL(volume)
+        return self.setLINVOL(volume) and self.setRINVOL(volume)
 
     # Zero Cross prevents zipper sounds on volume changes
     # Sets both left and right PGAs
-    def enablePgaZeroCross(self):
-        self._writeRegisterBit(WM8960_REG_LEFT_INPUT_VOLUME, 6, 1)
-        self._writeRegisterBit(WM8960_REG_RIGHT_INPUT_VOLUME, 6, 1)
-    def disablePgaZeroCross(self):
-        self._writeRegisterBit(WM8960_REG_LEFT_INPUT_VOLUME, 6, 0)
-        self._writeRegisterBit(WM8960_REG_RIGHT_INPUT_VOLUME, 6, 0)
+    def enablePgaZeroCross(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_LEFT_INPUT_VOLUME, 6, 1) and self._writeRegisterBit(WM8960_REG_RIGHT_INPUT_VOLUME, 6, 1)
+    def disablePgaZeroCross(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_LEFT_INPUT_VOLUME, 6, 0) and self._writeRegisterBit(WM8960_REG_RIGHT_INPUT_VOLUME, 6, 0)
 
-    def enableLINMUTE(self):
-        self._writeRegisterBit(WM8960_REG_LEFT_INPUT_VOLUME, 7, 1)
-    def disableLINMUTE(self):
-        self._writeRegisterBit(WM8960_REG_LEFT_INPUT_VOLUME, 7, 0)
-        self._writeRegisterBit(WM8960_REG_LEFT_INPUT_VOLUME, 8, 1)
+    def enableLINMUTE(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_LEFT_INPUT_VOLUME, 7, 1)
+    def disableLINMUTE(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_LEFT_INPUT_VOLUME, 7, 0) and self._writeRegisterBit(WM8960_REG_LEFT_INPUT_VOLUME, 8, 1)
 
-    def enableRINMUTE(self):
-        self._writeRegisterBit(WM8960_REG_RIGHT_INPUT_VOLUME, 7, 1)
-    def disableRINMUTE(self):
-        self._writeRegisterBit(WM8960_REG_RIGHT_INPUT_VOLUME, 7, 0)
-        self._writeRegisterBit(WM8960_REG_RIGHT_INPUT_VOLUME, 8, 1)
+    def enableRINMUTE(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_RIGHT_INPUT_VOLUME, 7, 1)
+    def disableRINMUTE(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_RIGHT_INPUT_VOLUME, 7, 0) and self._writeRegisterBit(WM8960_REG_RIGHT_INPUT_VOLUME, 8, 1)
 
-    def enableINMUTE(self):
-        self.enableLINMUTE()
-        self.enableRINMUTE()
-    def disableINMUTE(self):
-        self.disableLINMUTE()
-        self.disableRINMUTE()
+    def enableINMUTE(self) -> bool:
+        return self.enableLINMUTE() and self.enableRINMUTE()
+    def disableINMUTE(self) -> bool:
+        return self.disableLINMUTE() and self.disableRINMUTE()
 
     # Causes left and right input PGA volumes to be updated
     # (LINVOL and RINVOL)
-    def pgaLeftIPVUSet(self):
-        self._writeRegisterBit(WM8960_REG_LEFT_INPUT_VOLUME, 8, 1)
+    def pgaLeftIPVUSet(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_LEFT_INPUT_VOLUME, 8, 1)
 
     # Causes left and right input PGA volumes to be updated
     # (LINVOL and RINVOL)
-    def pgaRightIPVUSet(self):
-        self._writeRegisterBit(WM8960_REG_RIGHT_INPUT_VOLUME, 8, 1)
+    def pgaRightIPVUSet(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_RIGHT_INPUT_VOLUME, 8, 1)
 
     # Boosts
 
     # WM8960_MIC_BOOST_GAIN_0DB or _13DB, _20DB, _29DB
-    def setLMICBOOST(self, boost_gain:int):
+    def setLMICBOOST(self, boost_gain:int) -> bool:
         # Limit incoming values max
         if boost_gain > 3:
             boost_gain = 3
-        self._writeRegisterMultiBits(WM8960_REG_ADCL_SIGNAL_PATH, 5, 4, boost_gain)
+        return self._writeRegisterMultiBits(WM8960_REG_ADCL_SIGNAL_PATH, 5, 4, boost_gain)
 
     # WM8960_MIC_BOOST_GAIN_0DB or _13DB, _20DB, _29DB
-    def setRMICBOOST(self, boost_gain:int):
+    def setRMICBOOST(self, boost_gain:int) -> bool:
         # Limit incoming values max
         if boost_gain > 3:
             boost_gain = 3
-        self._writeRegisterMultiBits(WM8960_REG_ADCR_SIGNAL_PATH, 5, 4, boost_gain)
+        return self._writeRegisterMultiBits(WM8960_REG_ADCR_SIGNAL_PATH, 5, 4, boost_gain)
 
-    def setMICBOOST(self, boost_gain:int):
-        self.setLMICBOOST(boost_gain)
-        self.setRMICBOOST(boost_gain)
+    def setMICBOOST(self, boost_gain:int) -> bool:
+        return self.setLMICBOOST(boost_gain) and self.setRMICBOOST(boost_gain)
 
     # WM8960_BOOST_MIXER_GAIN_MUTE, WM8960_BOOST_MIXER_GAIN_NEG_12DB, ...
-    def setLIN2BOOST(self, boost_gain:int):
+    def setLIN2BOOST(self, boost_gain:int) -> bool:
         # Limit incoming values max
         if boost_gain > 7:
             boost_gain = 7
-        self._writeRegisterMultiBits(WM8960_REG_INPUT_BOOST_MIXER_1, 3, 1, boost_gain)
+        return self._writeRegisterMultiBits(WM8960_REG_INPUT_BOOST_MIXER_1, 3, 1, boost_gain)
 
     # WM8960_BOOST_MIXER_GAIN_MUTE, WM8960_BOOST_MIXER_GAIN_NEG_12DB, ...
-    def setRIN2BOOST(self, boost_gain:int):
+    def setRIN2BOOST(self, boost_gain:int) -> bool:
         # Limit incoming values max
         if boost_gain > 7:
             boost_gain = 7
-        self._writeRegisterMultiBits(WM8960_REG_INPUT_BOOST_MIXER_2, 3, 1, boost_gain)
+        return self._writeRegisterMultiBits(WM8960_REG_INPUT_BOOST_MIXER_2, 3, 1, boost_gain)
 
-    def setIN2BOOST(self, boost_gain:int):
-        self.setLIN2BOOST(boost_gain)
-        self.setRIN2BOOST(boost_gain)
+    def setIN2BOOST(self, boost_gain:int) -> bool:
+        return self.setLIN2BOOST(boost_gain) and self.setRIN2BOOST(boost_gain)
 
     # WM8960_BOOST_MIXER_GAIN_MUTE, WM8960_BOOST_MIXER_GAIN_NEG_12DB, ...
-    def setLIN3BOOST(self, boost_gain:int):
+    def setLIN3BOOST(self, boost_gain:int) -> bool:
         # Limit incoming values max
         if boost_gain > 7:
             boost_gain = 7
-        self._writeRegisterMultiBits(WM8960_REG_INPUT_BOOST_MIXER_1, 6, 4, boost_gain)
+        return self._writeRegisterMultiBits(WM8960_REG_INPUT_BOOST_MIXER_1, 6, 4, boost_gain)
 
     # WM8960_BOOST_MIXER_GAIN_MUTE, WM8960_BOOST_MIXER_GAIN_NEG_12DB, ...
-    def setRIN3BOOST(self, boost_gain:int):
+    def setRIN3BOOST(self, boost_gain:int) -> bool:
         # Limit incoming values max
         if boost_gain > 7:
             boost_gain = 7
-        self._writeRegisterMultiBits(WM8960_REG_INPUT_BOOST_MIXER_2, 6, 4, boost_gain)
+        return self._writeRegisterMultiBits(WM8960_REG_INPUT_BOOST_MIXER_2, 6, 4, boost_gain)
 
-    def setIN3BOOST(self, boost_gain:int):
-        self.setLIN3BOOST(boost_gain)
-        self.setRIN3BOOST(boost_gain)
+    def setIN3BOOST(self, boost_gain:int) -> bool:
+        return self.setLIN3BOOST(boost_gain) and self.setRIN3BOOST(boost_gain)
 
     # Mic Bias control
-    def enableMicBias(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 1, 1)
-    def disableMicBias(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 1, 0)
+    def enableMicBias(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 1, 1)
+    def disableMicBias(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 1, 0)
 
     # WM8960_MIC_BIAS_VOLTAGE_0_9_AVDD (0.9*AVDD)
     # or WM8960_MIC_BIAS_VOLTAGE_0_65_AVDD (0.65*AVDD)
-    def setMicBiasVoltage(self, voltage:bool):
-        self._writeRegisterBit(WM8960_REG_ADDITIONAL_CONTROL_4, 0, voltage)
+    def setMicBiasVoltage(self, voltage:bool) -> bool:
+        return self._writeRegisterBit(WM8960_REG_ADDITIONAL_CONTROL_4, 0, voltage)
 
     ## ADC
 
-    def enableAdcLeft(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 3, 1)
-    def disableAdcLeft(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 3, 0)
+    def enableAdcLeft(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 3, 1)
+    def disableAdcLeft(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 3, 0)
 
-    def enableAdcRight(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 2, 1)
-    def disableAdcRight(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 2, 0)
+    def enableAdcRight(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 2, 1)
+    def disableAdcRight(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 2, 0)
 
-    def enableAdc(self):
-        self.enableAdcLeft()
-        self.enableAdcRight()
-    def disableAdc(self):
-        self.disableAdcLeft()
-        self.disableAdcRight()
+    def enableAdc(self) -> bool:
+        return self.enableAdcLeft() and self.enableAdcRight()
+    def disableAdc(self) -> bool:
+        return self.disableAdcLeft() and self.disableAdcRight()
 
     # ADC digital volume
     # Note, also needs to handle control of the ADCVU bits (volume update).
@@ -866,12 +855,12 @@ class WM8960:
     # ... 0.5dB steps up to
     # 195 = 0dB
     # 255 = +30dB
-    def setAdcLeftDigitalVolume(self, volume:int):
-        self._writeRegisterMultiBits(WM8960_REG_LEFT_ADC_VOLUME, 7, 0, volume)
-        self.adcLeftADCVUSet()
-    def setAdcRightDigitalVolume(self, volume:int):
-        self._writeRegisterMultiBits(WM8960_REG_RIGHT_ADC_VOLUME, 7, 0, volume)
-        self.adcRightADCVUSet()
+    def setAdcLeftDigitalVolume(self, volume:int) -> bool:
+        if not self._writeRegisterMultiBits(WM8960_REG_LEFT_ADC_VOLUME, 7, 0, volume): return False
+        return self.adcLeftADCVUSet()
+    def setAdcRightDigitalVolume(self, volume:int) -> bool:
+        if not self._writeRegisterMultiBits(WM8960_REG_RIGHT_ADC_VOLUME, 7, 0, volume): return False
+        return self.adcRightADCVUSet()
 
     '''
     ADC digital volume DB
@@ -883,32 +872,31 @@ class WM8960:
     ... 0.5dB steps ...
     30.00 = +30.00dB  (MAX)
     '''
-    def setAdcLeftDigitalVolumeDB(self, dB:float):
+    def setAdcLeftDigitalVolumeDB(self, dB:float) -> bool:
         # Create an unsigned integer volume setting variable we can send to setAdcLeftDigitalVolume()
         volume = self.convertDBtoSetting(dB, WM8960_ADC_GAIN_OFFSET, WM8960_ADC_GAIN_STEPSIZE, WM8960_ADC_GAIN_MIN, WM8960_ADC_GAIN_MAX)
-        self.setAdcLeftDigitalVolume(volume)
-    def setAdcRightDigitalVolumeDB(self, dB:float):
+        return self.setAdcLeftDigitalVolume(volume)
+    def setAdcRightDigitalVolumeDB(self, dB:float) -> bool:
         # Create an unsigned integer volume setting variable we can send to setAdcRightDigitalVolume()
         volume = self.convertDBtoSetting(dB, WM8960_ADC_GAIN_OFFSET, WM8960_ADC_GAIN_STEPSIZE, WM8960_ADC_GAIN_MIN, WM8960_ADC_GAIN_MAX)
-        self.setAdcRightDigitalVolume(volume)
+        return self.setAdcRightDigitalVolume(volume)
 
     # Causes left and right input ADC volumes to be updated
-    def adcLeftADCVUSet(self):
-        self._writeRegisterBit(WM8960_REG_LEFT_ADC_VOLUME, 8, 1)
+    def adcLeftADCVUSet(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_LEFT_ADC_VOLUME, 8, 1)
 
     # Causes left and right input ADC volumes to be updated
-    def adcRightADCVUSet(self):
-        self._writeRegisterBit(WM8960_REG_RIGHT_ADC_VOLUME, 8, 1)
+    def adcRightADCVUSet(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_RIGHT_ADC_VOLUME, 8, 1)
 
     # Control ADC volume in a stereo pair
-    def setAdcDigitalVolume(self, volume:int):
-        self.setAdcLeftDigitalVolume(volume)
-        self.setAdcRightDigitalVolume(volume)
+    def setAdcDigitalVolume(self, volume:int) -> bool:
+        return self.setAdcLeftDigitalVolume(volume) and self.setAdcRightDigitalVolume(volume)
 
-    def setAdcDigitalVolumeDB(self, dB:float):
+    def setAdcDigitalVolumeDB(self, dB:float) -> bool:
         # Create an unsigned integer volume setting variable we can send to setAdcLeftDigitalVolume()
         volume = self.convertDBtoSetting(dB, WM8960_ADC_GAIN_OFFSET, WM8960_ADC_GAIN_STEPSIZE, WM8960_ADC_GAIN_MIN, WM8960_ADC_GAIN_MAX)
-        self.setAdcDigitalVolume(volume)
+        return self.setAdcDigitalVolume(volume)
 
     ## ALC
 
@@ -918,97 +906,93 @@ class WM8960:
     # RINMUTE) are ignored.
 
     # Also sets alc sample rate to match global sample rate.
-    def enableAlc(self, mode:int = WM8960_ALC_MODE_STEREO):
+    def enableAlc(self, mode:int = WM8960_ALC_MODE_STEREO) -> bool:
         bit8 = mode >> 1
         bit7 = mode & 0x1
-        self._writeRegisterBit(WM8960_REG_ALC1, 8, bit8)
-        self._writeRegisterBit(WM8960_REG_ALC1, 7, bit7)
+        return self._writeRegisterBit(WM8960_REG_ALC1, 8, bit8) and self._writeRegisterBit(WM8960_REG_ALC1, 7, bit7)
     
-    def disableAlc(self):
-        self._writeRegisterBit(WM8960_REG_ALC1, 8, 0)
-        self._writeRegisterBit(WM8960_REG_ALC1, 7, 0)
+    def disableAlc(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_ALC1, 8, 0) and self._writeRegisterBit(WM8960_REG_ALC1, 7, 0)
 
     # Valid inputs are 0-15
     # 0 = -22.5dB FS ... 1.5dB steps ... 15 = -1.5dB FS
-    def setAlcTarget(self, target:int):
+    def setAlcTarget(self, target:int) -> bool:
         # Limit incoming values max
         if target > 15:
             target = 15
-        self._writeRegisterMultiBits(WM8960_REG_ALC1,3,0,target)
+        return self._writeRegisterMultiBits(WM8960_REG_ALC1,3,0,target)
 
     # Valid inputs are 0-10, 0 = 24ms, 1 = 48ms ... 10 = 24.58seconds
-    def setAlcDecay(self, decay:int):
+    def setAlcDecay(self, decay:int) -> bool:
         # Limit incoming values max
         if decay > 10:
             decay = 10
-        self._writeRegisterMultiBits(WM8960_REG_ALC3, 7, 4, decay)
+        return self._writeRegisterMultiBits(WM8960_REG_ALC3, 7, 4, decay)
 
     # Valid inputs are 0-10, 0 = 6ms, 1 = 12ms, 2 = 24ms ...
     # 10 = 6.14seconds
-    def setAlcAttack(self, attack:int):
+    def setAlcAttack(self, attack:int) -> bool:
         # Limit incoming values max
         if attack > 10:
             attack = 10
-        self._writeRegisterMultiBits(WM8960_REG_ALC3, 3, 0, attack)
+        return self._writeRegisterMultiBits(WM8960_REG_ALC3, 3, 0, attack)
 
     # Valid inputs are 0-7, 0 = -12dB, ... 7 = +30dB
-    def setAlcMaxGain(self, maxGain:int):
+    def setAlcMaxGain(self, maxGain:int) -> bool:
         # Limit incoming values max
         if maxGain > 7:
             maxGain = 7
-        self._writeRegisterMultiBits(WM8960_REG_ALC1, 6, 4, maxGain)
+        return self._writeRegisterMultiBits(WM8960_REG_ALC1, 6, 4, maxGain)
 
     # Valid inputs are 0-7, 0 = -17.25dB, ... 7 = +24.75dB
-    def setAlcMinGain(self, minGain:int):
+    def setAlcMinGain(self, minGain:int) -> bool:
         # Limit incoming values max
         if minGain > 7:
             minGain = 7
-        self._writeRegisterMultiBits(WM8960_REG_ALC2, 6, 4, minGain)
+        return self._writeRegisterMultiBits(WM8960_REG_ALC2, 6, 4, minGain)
 
     # Valid inputs are 0-15, 0 = 0ms, ... 15 = 43.691s
-    def setAlcHold(self, hold:int):
+    def setAlcHold(self, hold:int) -> bool:
         # Limit incoming values max
         if hold > 15:
             hold = 15
-        self._writeRegisterMultiBits(WM8960_REG_ALC2, 3, 0, hold)
+        return self._writeRegisterMultiBits(WM8960_REG_ALC2, 3, 0, hold)
 
     # Peak Limiter
-    def enablePeakLimiter(self):
-        self._writeRegisterBit(WM8960_REG_ALC3, 8, 1)
+    def enablePeakLimiter(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_ALC3, 8, 1)
 
-    def disablePeakLimiter(self):
-        self._writeRegisterBit(WM8960_REG_ALC3, 8, 0)
+    def disablePeakLimiter(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_ALC3, 8, 0)
 
     # Noise Gate
-    def enableNoiseGate(self):
-        self._writeRegisterBit(WM8960_REG_NOISE_GATE, 0, 1)
-    def disableNoiseGate(self):
-        self._writeRegisterBit(WM8960_REG_NOISE_GATE, 0, 0)
+    def enableNoiseGate(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_NOISE_GATE, 0, 1)
+    def disableNoiseGate(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_NOISE_GATE, 0, 0)
 
     # 0-31, 0 = -76.5dBfs, 31 = -30dBfs
-    def setNoiseGateThreshold(self, threshold:int):
+    def setNoiseGateThreshold(self, threshold:int) -> bool:
         # TODO
-        pass
+        return False
 
     ## DAC
 
     # Enable/disble each channel
-    def enableDacLeft(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 8, 1)
-    def disableDacLeft(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 8, 0)
+    def enableDacLeft(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 8, 1)
+    def disableDacLeft(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 8, 0)
 
-    def enableDacRight(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 7, 1)
-    def disableDacRight(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 7, 0)
+    def enableDacRight(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 7, 1)
+    def disableDacRight(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 7, 0)
 
-    def enableDac(self):
-        self.enableDacLeft()
-        self.enableDacRight()
-    def disableDac(self):
-        self.disableDacLeft()
-        self.disableDacRight()
+    def enableDac(self) -> bool:
+        return self.enableDacLeft() and self.enableDacRight()
+    def disableDac(self) -> bool:
+        return self.disableDacLeft() and self.disableDacRight()
 
     # DAC digital volume
     # Valid inputs are 0-255
@@ -1016,13 +1000,13 @@ class WM8960:
     # 1 = -127dB
     # ... 0.5dB steps up to
     # 255 = 0dB
-    def setDacLeftDigitalVolume(self, volume:int):
-        self._writeRegisterMultiBits(WM8960_REG_LEFT_DAC_VOLUME, 7, 0, volume)
-        self.dacLeftDACVUSet()
+    def setDacLeftDigitalVolume(self, volume:int) -> bool:
+        if not self._writeRegisterMultiBits(WM8960_REG_LEFT_DAC_VOLUME, 7, 0, volume): return False
+        return self.dacLeftDACVUSet()
 
-    def setDacRightDigitalVolume(self, volume:int):
-        self._writeRegisterMultiBits(WM8960_REG_RIGHT_DAC_VOLUME, 7, 0, volume)
-        self.dacRightDACVUSet()
+    def setDacRightDigitalVolume(self, volume:int) -> bool:
+        if not self._writeRegisterMultiBits(WM8960_REG_RIGHT_DAC_VOLUME, 7, 0, volume): return False
+        return self.dacRightDACVUSet()
 
     '''
     DAC digital volume DB
@@ -1033,60 +1017,59 @@ class WM8960:
     ... 0.5dB steps ...
     30.00 = +30.00dB  (MAX)
     '''
-    def setDacLeftDigitalVolumeDB(self, dB:float):
+    def setDacLeftDigitalVolumeDB(self, dB:float) -> bool:
         # Create an unsigned integer volume setting variable we can send to setDacLeftDigitalVolume()
         volume = self.convertDBtoSetting(dB, WM8960_DAC_GAIN_OFFSET, WM8960_DAC_GAIN_STEPSIZE, WM8960_DAC_GAIN_MIN, WM8960_DAC_GAIN_MAX)
-        self.setDacLeftDigitalVolume(volume)
+        return self.setDacLeftDigitalVolume(volume)
 
-    def setDacRightDigitalVolumeDB(self, dB:float):
+    def setDacRightDigitalVolumeDB(self, dB:float) -> bool:
         # Create an unsigned integer volume setting variable we can send to setDacRightDigitalVolume()
         volume = self.convertDBtoSetting(dB, WM8960_DAC_GAIN_OFFSET, WM8960_DAC_GAIN_STEPSIZE, WM8960_DAC_GAIN_MIN, WM8960_DAC_GAIN_MAX)
-        self.setDacRightDigitalVolume(volume)
+        return self.setDacRightDigitalVolume(volume)
 
     # Causes left and right input DAC volumes to be updated
-    def dacLeftDACVUSet(self):
-        self._writeRegisterBit(WM8960_REG_LEFT_DAC_VOLUME, 8, 1)
+    def dacLeftDACVUSet(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_LEFT_DAC_VOLUME, 8, 1)
 
     # Causes left and right input DAC volumes to be updated
-    def dacRightDACVUSet(self):
-        self._writeRegisterBit(WM8960_REG_RIGHT_DAC_VOLUME, 8, 1)
+    def dacRightDACVUSet(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_RIGHT_DAC_VOLUME, 8, 1)
 
-    def setDacDigitalVolume(self, volume:int):
-        self.setDacLeftDigitalVolume(volume)
-        self.setDacRightDigitalVolume(volume)
+    def setDacDigitalVolume(self, volume:int) -> bool:
+        return self.setDacLeftDigitalVolume(volume) and self.setDacRightDigitalVolume(volume)
     
-    def setDacDigitalVolumeDB(self, dB:float):
+    def setDacDigitalVolumeDB(self, dB:float) -> bool:
         # Create an unsigned integer volume setting variable we can send to setDacRightDigitalVolume()
         volume = self.convertDBtoSetting(dB, WM8960_DAC_GAIN_OFFSET, WM8960_DAC_GAIN_STEPSIZE, WM8960_DAC_GAIN_MIN, WM8960_DAC_GAIN_MAX)
-        self.setDacDigitalVolume(volume)
+        return self.setDacDigitalVolume(volume)
 
     # DAC mute
-    def enableDacMute(self):
-        self._writeRegisterBit(WM8960_REG_ADC_DAC_CTRL_1, 3, 1)
-    def disableDacMute(self):
-        self._writeRegisterBit(WM8960_REG_ADC_DAC_CTRL_1, 3, 0)
+    def enableDacMute(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_ADC_DAC_CTRL_1, 3, 1)
+    def disableDacMute(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_ADC_DAC_CTRL_1, 3, 0)
 
     # DE-Emphasis
 
     # 3D Stereo Enhancement
     # 3D enable/disable
-    def enable3d(self):
-        self._writeRegisterBit(WM8960_REG_3D_CONTROL, 0, 1)
-    def disable3d(self):
-        self._writeRegisterBit(WM8960_REG_3D_CONTROL, 0, 0)
+    def enable3d(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_3D_CONTROL, 0, 1)
+    def disable3d(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_3D_CONTROL, 0, 0)
     def set3dDepth(self, depth:int): # 0 = 0%, 15 = 100%
         # Limit incoming values max
         if depth > 15:
             depth = 15
-        self._writeRegisterMultiBits(WM8960_REG_3D_CONTROL, 4, 1, depth)
+        return self._writeRegisterMultiBits(WM8960_REG_3D_CONTROL, 4, 1, depth)
 
     # 3D upper/lower cut-off frequencies.
 
     # DAC output -6dB attentuation enable/disable
-    def enableDac6dbAttenuation(self):
-        self._writeRegisterBit(WM8960_REG_ADC_DAC_CTRL_1, 7, 1)
-    def disableDac6dbAttentuation(self):
-        self._writeRegisterBit(WM8960_REG_ADC_DAC_CTRL_1, 7, 0)
+    def enableDac6dbAttenuation(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_ADC_DAC_CTRL_1, 7, 1)
+    def disableDac6dbAttentuation(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_ADC_DAC_CTRL_1, 7, 0)
 
     ## OUTPUT mixers
 
@@ -1096,133 +1079,121 @@ class WM8960:
     # OUT3MIX		Mono Output Mixer
 
     # Enable/disable left and right output mixers
-    def enableLOMIX(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 3, 1)
-    def disableLOMIX(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 3, 0)
+    def enableLOMIX(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 3, 1)
+    def disableLOMIX(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 3, 0)
 
-    def enableROMIX(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 2, 1)
-    def disableROMIX(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 2, 0)
+    def enableROMIX(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 2, 1)
+    def disableROMIX(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 2, 0)
 
-    def enableOUT3MIX(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 1, 1)
-    def disableOUT3MIX(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 1, 0)
+    def enableOUT3MIX(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 1, 1)
+    def disableOUT3MIX(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 1, 0)
 
     # Enable/disable audio path connections/vols to/from output mixers
     # See datasheet page 35 for a nice image of all the connections.
 
-    def enableLI2LO(self):
-        self._writeRegisterBit(WM8960_REG_LEFT_OUT_MIX_1, 7, 1)
-    def disableLI2LO(self):
-        self._writeRegisterBit(WM8960_REG_LEFT_OUT_MIX_1, 7, 0)
+    def enableLI2LO(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_LEFT_OUT_MIX_1, 7, 1)
+    def disableLI2LO(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_LEFT_OUT_MIX_1, 7, 0)
 
     # 0-7, 0 = 0dB, ... 3dB steps ... 7 = -21dB
-    def setLI2LOVOL(self, volume:int):
-        self._writeRegisterMultiBits(WM8960_REG_LEFT_OUT_MIX_1, 6, 4, volume)
+    def setLI2LOVOL(self, volume:int) -> bool:
+        return self._writeRegisterMultiBits(WM8960_REG_LEFT_OUT_MIX_1, 6, 4, volume)
 
-    def enableLB2LO(self):
-        self._writeRegisterBit(WM8960_REG_BYPASS_1, 7, 1)
-    def disableLB2LO(self):
-        self._writeRegisterBit(WM8960_REG_BYPASS_1, 7, 0)
+    def enableLB2LO(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_BYPASS_1, 7, 1)
+    def disableLB2LO(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_BYPASS_1, 7, 0)
 
     # 0-7, 0 = 0dB, ... 3dB steps ... 7 = -21dB
-    def setLB2LOVOL(self, volume:int):
+    def setLB2LOVOL(self, volume:int) -> bool:
         # Limit incoming values max
         if volume > 7:
             volume = 7
-        self._writeRegisterMultiBits(WM8960_REG_BYPASS_1, 6, 4, volume)
+        return self._writeRegisterMultiBits(WM8960_REG_BYPASS_1, 6, 4, volume)
 
-    def enableLD2LO(self):
-        self._writeRegisterBit(WM8960_REG_LEFT_OUT_MIX_1, 8, 1)
-    def disableLD2LO(self):
-        self._writeRegisterBit(WM8960_REG_LEFT_OUT_MIX_1, 8, 0)
+    def enableLD2LO(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_LEFT_OUT_MIX_1, 8, 1)
+    def disableLD2LO(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_LEFT_OUT_MIX_1, 8, 0)
 
-    def enableRI2RO(self):
-        self._writeRegisterBit(WM8960_REG_RIGHT_OUT_MIX_2, 7, 1)
-    def disableRI2RO(self):
-        self._writeRegisterBit(WM8960_REG_RIGHT_OUT_MIX_2, 7, 0)
+    def enableRI2RO(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_RIGHT_OUT_MIX_2, 7, 1)
+    def disableRI2RO(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_RIGHT_OUT_MIX_2, 7, 0)
 
     # 0-7, 0 = 0dB, ... 3dB steps ... 7 = -21dB
-    def setRI2ROVOL(self, volume:int):
+    def setRI2ROVOL(self, volume:int) -> bool:
         # Limit incoming values max
         if volume > 7:
             volume = 7
-        self._writeRegisterMultiBits(WM8960_REG_RIGHT_OUT_MIX_2, 6, 4, volume)
+        return self._writeRegisterMultiBits(WM8960_REG_RIGHT_OUT_MIX_2, 6, 4, volume)
 
-    def enableRB2RO(self):
-        self._writeRegisterBit(WM8960_REG_BYPASS_2, 7, 1)
-    def disableRB2RO(self):
-        self._writeRegisterBit(WM8960_REG_BYPASS_2, 7, 0)
+    def enableRB2RO(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_BYPASS_2, 7, 1)
+    def disableRB2RO(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_BYPASS_2, 7, 0)
 
     # 0-7, 0 = 0dB, ... 3dB steps ... 7 = -21dB
-    def setRB2ROVOL(self, volume:int):
+    def setRB2ROVOL(self, volume:int) -> bool:
         # Limit incoming values max
         if volume > 7:
             volume = 7
-        self._writeRegisterMultiBits(WM8960_REG_BYPASS_2, 6, 4, volume)
+        return self._writeRegisterMultiBits(WM8960_REG_BYPASS_2, 6, 4, volume)
 
-    def enableRD2RO(self):
-        self._writeRegisterBit(WM8960_REG_RIGHT_OUT_MIX_2, 8, 1)
-    def disableRD2RO(self):
-        self._writeRegisterBit(WM8960_REG_RIGHT_OUT_MIX_2, 8, 0)
+    def enableRD2RO(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_RIGHT_OUT_MIX_2, 8, 1)
+    def disableRD2RO(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_RIGHT_OUT_MIX_2, 8, 0)
 
     # Mono Output mixer.
     # Note, for capless HPs, we'll want this to output a buffered VMID.
     # To do this, we need to disable both of these connections.
-    def enableLI2MO(self):
-        self._writeRegisterBit(WM8960_REG_MONO_OUT_MIX_1, 7, 1)
-    def disableLI2MO(self):
-        self._writeRegisterBit(WM8960_REG_MONO_OUT_MIX_1, 7, 0)
+    def enableLI2MO(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_MONO_OUT_MIX_1, 7, 1)
+    def disableLI2MO(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_MONO_OUT_MIX_1, 7, 0)
 
-    def enableRI2MO(self):
-        self._writeRegisterBit(WM8960_REG_MONO_OUT_MIX_2, 7, 1)
-    def disableRI2MO(self):
-        self._writeRegisterBit(WM8960_REG_MONO_OUT_MIX_2, 7, 0)
+    def enableRI2MO(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_MONO_OUT_MIX_2, 7, 1)
+    def disableRI2MO(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_MONO_OUT_MIX_2, 7, 0)
 
     # Paired stereo functions to enable/disable output mixers
-    def enableI2O(self):
-        self.enableLI2LO()
-        self.enableRI2RO()
-    def disableI2O(self):
-        self.disableLI2LO()
-        self.disableRI2RO()
-    def setI2OVOL(self, volume:int):
-        self.setLI2LOVOL(volume)
-        self.setRI2ROVOL(volume)
+    def enableI2O(self) -> bool:
+        return self.enableLI2LO() and self.enableRI2RO()
+    def disableI2O(self) -> bool:
+        return self.disableLI2LO() and self.disableRI2RO()
+    def setI2OVOL(self, volume:int) -> bool:
+        return self.setLI2LOVOL(volume) and self.setRI2ROVOL(volume)
 
-    def enableB2O(self):
-        self.enableLB2LO()
-        self.enableRB2RO()
-    def disableB2O(self):
-        self.disableLB2LO()
-        self.disableRB2RO()
-    def setB2OVOL(self, volume:int):
-        self.setLB2LOVOL(volume)
-        self.setRB2ROVOL(volume)
+    def enableB2O(self) -> bool:
+        return self.enableLB2LO() and self.enableRB2RO()
+    def disableB2O(self) -> bool:
+        return self.disableLB2LO() and self.disableRB2RO()
+    def setB2OVOL(self, volume:int) -> bool:
+        return self.setLB2LOVOL(volume) and self.setRB2ROVOL(volume)
 
-    def enableD2O(self):
-        self.enableLD2LO()
-        self.enableRD2RO()
-    def disableD2O(self):
-        self.disableLD2LO()
-        self.disableRD2RO()
+    def enableD2O(self) -> bool:
+        return self.enableLD2LO() and self.enableRD2RO()
+    def disableD2O(self) -> bool:
+        return self.disableLD2LO() and self.disableRD2RO()
     
-    def enableI2MO(self):
-        self.enableLI2MO()
-        self.enableRI2MO()
-    def disableI2MO(self):
-        self.disableLI2MO()
-        self.disableRI2MO()
+    def enableI2MO(self) -> bool:
+        return self.enableLI2MO() and self.enableRI2MO()
+    def disableI2MO(self) -> bool:
+        return self.disableLI2MO() and self.disableRI2MO()
 
-    def enableOMIX(self):
-        self.enableLOMIX()
-        self.enableROMIX()
-    def disableOMIX(self):
-        self.disableLOMIX()
-        self.disableROMIX()
+    def enableOMIX(self) -> bool:
+        return self.enableLOMIX() and self.enableROMIX()
+    def disableOMIX(self) -> bool:
+        return self.disableLOMIX() and self.disableROMIX()
 
     # Sets the VMID signal to one of three possible settings.
     # 4 options:
@@ -1230,51 +1201,46 @@ class WM8960:
     # WM8960_VMIDSEL_2X50KOHM (playback / record)
     # WM8960_VMIDSEL_2X250KOHM (for low power / standby)
     # WM8960_VMIDSEL_2X5KOHM (for fast start-up)
-    def setVMID(self, setting:int = WM8960_VMIDSEL_2X50KOHM):
-        self._writeRegisterMultiBits(WM8960_REG_PWR_MGMT_1, 8, 7, setting)
+    def setVMID(self, setting:int = WM8960_VMIDSEL_2X50KOHM) -> bool:
+        return self._writeRegisterMultiBits(WM8960_REG_PWR_MGMT_1, 8, 7, setting)
     
     # Enables VMID in the WM8960_REG_PWR_MGMT_2 register, and set's it to 
     # playback/record settings of 2*50Kohm.
     # Note, this function is only here for backwards compatibility with the
     # original releases of this library. It is recommended to use the
     # setVMID() function instead.
-    def enableVMID(self):
-        self.setVMID(WM8960_VMIDSEL_2X50KOHM)
-    def disableVMID(self):
-        self.setVMID(WM8960_VMIDSEL_DISABLED)
+    def enableVMID(self) -> bool:
+        return self.setVMID(WM8960_VMIDSEL_2X50KOHM)
+    def disableVMID(self) -> bool:
+        return self.setVMID(WM8960_VMIDSEL_DISABLED)
 
     # This will disable both connections, thus enable VMID on OUT3. Note,
     # to enable VMID, you also need to enable OUT3 in the
     # WM8960_REG_PWR_MGMT_2 [1]
-    def enableOUT3asVMID(self):
-        self.disableLI2MO()
-        self.disableRI2MO()
-        self.enableOUT3MIX()
-        self.enableVMID()
+    def enableOUT3asVMID(self) -> bool:
+        return self.disableLI2MO() and self.disableRI2MO() and self.enableOUT3MIX() and self.enableVMID()
     
     ## Headphones
 
     # Enable and disable headphones (mute)
-    def enableHeadphones(self):
-        self.enableRightHeadphone()
-        self.enableLeftHeadphone()
-    def disableHeadphones(self):
-        self.disableRightHeadphone()
-        self.disableLeftHeadphone()
+    def enableHeadphones(self) -> bool:
+        return self.enableRightHeadphone() and self.enableLeftHeadphone()
+    def disableHeadphones(self) -> bool:
+        return self.disableRightHeadphone() and self.disableLeftHeadphone()
 
-    def enableRightHeadphone(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 5, 1)
-    def disableRightHeadphone(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 5, 0)
-    def enableLeftHeadphone(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 6, 1)
-    def disableLeftHeadphone(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 6, 0)
+    def enableRightHeadphone(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 5, 1)
+    def disableRightHeadphone(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 5, 0)
+    def enableLeftHeadphone(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 6, 1)
+    def disableLeftHeadphone(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 6, 0)
 
-    def enableHeadphoneStandby(self):
-        self._writeRegisterBit(WM8960_REG_ANTI_POP_1, 0, 1)
-    def disableHeadphoneStandby(self):
-        self._writeRegisterBit(WM8960_REG_ANTI_POP_1, 0, 0)
+    def enableHeadphoneStandby(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_ANTI_POP_1, 0, 1)
+    def disableHeadphoneStandby(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_ANTI_POP_1, 0, 0)
 
     # Set headphone volume
     # Although you can control each headphone output independently, here
@@ -1283,7 +1249,7 @@ class WM8960:
 
     # Valid inputs are 47-127. 0-47 = mute, 48 = -73dB ... 1dB steps ...
     # 127 = +6dB
-    def setHeadphoneVolume(self, volume:int):
+    def setHeadphoneVolume(self, volume:int) -> bool:
         # Updates both left and right channels
         # Handles the OUT1VU (volume update) bit control, so that it happens at the 
         # same time on both channels. Note, we must also make sure that the outputs 
@@ -1298,17 +1264,17 @@ class WM8960:
             volume = 127
 
         # LEFT
-        self._writeRegisterMultiBits(WM8960_REG_LOUT1_VOLUME, 6, 0, volume)
+        if not self._writeRegisterMultiBits(WM8960_REG_LOUT1_VOLUME, 6, 0, volume): return False
 
         # RIGHT
-        self._writeRegisterMultiBits(WM8960_REG_ROUT1_VOLUME, 6, 0, volume)
+        if not self._writeRegisterMultiBits(WM8960_REG_ROUT1_VOLUME, 6, 0, volume): return False
 
         # UPDATES
         # Updated left channel
-        self._writeRegisterBit(WM8960_REG_LOUT1_VOLUME, 8, 1)
+        if not self._writeRegisterBit(WM8960_REG_LOUT1_VOLUME, 8, 1): return False
 
         # Updated right channel
-        self._writeRegisterBit(WM8960_REG_ROUT1_VOLUME, 8, 1)
+        return self._writeRegisterBit(WM8960_REG_ROUT1_VOLUME, 8, 1)
 
     # Set headphone volume dB
     # Sets the volume of the headphone output buffer amp to a speicified
@@ -1321,58 +1287,56 @@ class WM8960:
     # 0 = 0dB
     # ... 1dB steps ...
     # 6 = +6dB  (MAX)
-    def setHeadphoneVolumeDB(self, dB:float):
+    def setHeadphoneVolumeDB(self, dB:float) -> bool:
         # Create an unsigned integer volume setting variable we can send to setHeadphoneVolume()
         volume = self.convertDBtoSetting(dB, WM8960_HP_GAIN_OFFSET, WM8960_HP_GAIN_STEPSIZE, WM8960_HP_GAIN_MIN, WM8960_HP_GAIN_MAX)
-        self.setHeadphoneVolume(volume)
+        return self.setHeadphoneVolume(volume)
 
     # Zero Cross prevents zipper sounds on volume changes
     # Sets both left and right Headphone outputs
-    def enableHeadphoneZeroCross(self):
+    def enableHeadphoneZeroCross(self) -> bool:
         # Left
-        self._writeRegisterBit(WM8960_REG_LOUT1_VOLUME, 7, 1)
+        if not self._writeRegisterBit(WM8960_REG_LOUT1_VOLUME, 7, 1): return False
         # Right
-        self._writeRegisterBit(WM8960_REG_ROUT1_VOLUME, 7, 1)
+        return self._writeRegisterBit(WM8960_REG_ROUT1_VOLUME, 7, 1)
 
-    def disableHeadphoneZeroCross(self):
+    def disableHeadphoneZeroCross(self) -> bool:
         # Left
-        self._writeRegisterBit(WM8960_REG_LOUT1_VOLUME, 7, 0)
+        if not self._writeRegisterBit(WM8960_REG_LOUT1_VOLUME, 7, 0): return False
         # Right
-        self._writeRegisterBit(WM8960_REG_ROUT1_VOLUME, 7, 0)
+        return self._writeRegisterBit(WM8960_REG_ROUT1_VOLUME, 7, 0)
 
     ## Speakers
 
     # Enable and disable speakers (mute)
-    def enableSpeakers(self):
-        self.enableRightSpeaker()
-        self.enableLeftSpeaker()
-    def disableSpeakers(self):
-        self.disableRightSpeaker()
-        self.disableLeftSpeaker()
+    def enableSpeakers(self) -> bool:
+        return self.enableRightSpeaker() and self.enableLeftSpeaker()
+    def disableSpeakers(self) -> bool:
+        return self.disableRightSpeaker() and self.disableLeftSpeaker()
 
-    def enableRightSpeaker(self):
+    def enableRightSpeaker(self) -> bool:
         # SPK_OP_EN
-        self._writeRegisterBit(WM8960_REG_CLASS_D_CONTROL_1, 7, 1)
+        if not self._writeRegisterBit(WM8960_REG_CLASS_D_CONTROL_1, 7, 1): return False
         # SPKR
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 3, 1)
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 3, 1)
 
-    def disableRightSpeaker(self):
+    def disableRightSpeaker(self) -> bool:
         # SPK_OP_EN
-        self._writeRegisterBit(WM8960_REG_CLASS_D_CONTROL_1, 7, 0)
+        if not self._writeRegisterBit(WM8960_REG_CLASS_D_CONTROL_1, 7, 0): return False
         # SPKR
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 3, 0)
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 3, 0)
 
-    def enableLeftSpeaker(self):
+    def enableLeftSpeaker(self) -> bool:
         # SPK_OP_EN
-        self._writeRegisterBit(WM8960_REG_CLASS_D_CONTROL_1, 6, 1)
+        if not self._writeRegisterBit(WM8960_REG_CLASS_D_CONTROL_1, 6, 1): return False
         # SPKL
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 4, 1)
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 4, 1)
 
-    def disableLeftSpeaker(self):
+    def disableLeftSpeaker(self) -> bool:
         # SPK_OP_EN
-        self._writeRegisterBit(WM8960_REG_CLASS_D_CONTROL_1, 6, 0)
+        if not self._writeRegisterBit(WM8960_REG_CLASS_D_CONTROL_1, 6, 0): return False
         # SPKL
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 4, 0)
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 4, 0)
 
     # Set Speaker output volume
     # Although you can control each Speaker output independently, here we
@@ -1380,7 +1344,7 @@ class WM8960:
     # Valid inputs are 47-127. 0-47 = mute, 48 = -73dB ... 1dB steps ...
     # 127 = +6dB
 
-    def setSpeakerVolume(self, volume:int):
+    def setSpeakerVolume(self, volume:int) -> bool:
         # Updates both left and right channels
         # Handles the SPKVU (volume update) bit control, so that it happens at the 
         # same time on both channels. Note, we must also make sure that the outputs 
@@ -1392,50 +1356,50 @@ class WM8960:
             volume = 127
 
         # LEFT
-        self._writeRegisterMultiBits(WM8960_REG_LOUT2_VOLUME, 6, 0, volume)
+        if not self._writeRegisterMultiBits(WM8960_REG_LOUT2_VOLUME, 6, 0, volume): return False
         # RIGHT
-        self._writeRegisterMultiBits(WM8960_REG_ROUT2_VOLUME, 6, 0, volume)
+        if not self._writeRegisterMultiBits(WM8960_REG_ROUT2_VOLUME, 6, 0, volume): return False
 
         # SPKVU
         # Updated left channel
-        self._writeRegisterBit(WM8960_REG_LOUT2_VOLUME, 8, 1)
+        if not self._writeRegisterBit(WM8960_REG_LOUT2_VOLUME, 8, 1): return False
         # Updated right channel
-        self._writeRegisterBit(WM8960_REG_ROUT2_VOLUME, 8, 1)
+        return self._writeRegisterBit(WM8960_REG_ROUT2_VOLUME, 8, 1)
 
-    def setSpeakerVolumeDB(self, dB:float):
+    def setSpeakerVolumeDB(self, dB:float) -> bool:
         # Create an unsigned integer volume setting variable we can send to setSpeakerVolume()
         volume = self.convertDBtoSetting(dB, WM8960_SPEAKER_GAIN_OFFSET, WM8960_SPEAKER_GAIN_STEPSIZE, WM8960_SPEAKER_GAIN_MIN, WM8960_SPEAKER_GAIN_MAX)
-        self.setSpeakerVolume(volume)
+        return self.setSpeakerVolume(volume)
 
     # Zero Cross prevents zipper sounds on volume changes
     # Sets both left and right Speaker outputs
-    def enableSpeakerZeroCross(self):
+    def enableSpeakerZeroCross(self) -> bool:
         # Left
-        self._writeRegisterBit(WM8960_REG_LOUT2_VOLUME, 7, 1)
+        if not self._writeRegisterBit(WM8960_REG_LOUT2_VOLUME, 7, 1): return False
         # Right
-        self._writeRegisterBit(WM8960_REG_ROUT2_VOLUME, 7, 1)
+        return self._writeRegisterBit(WM8960_REG_ROUT2_VOLUME, 7, 1)
 
-    def disableSpeakerZeroCross(self):
+    def disableSpeakerZeroCross(self) -> bool:
         # Left
-        self._writeRegisterBit(WM8960_REG_LOUT2_VOLUME, 7, 0)
+        if not self._writeRegisterBit(WM8960_REG_LOUT2_VOLUME, 7, 0): return False
         # Right
-        self._writeRegisterBit(WM8960_REG_ROUT2_VOLUME, 7, 0)
+        return self._writeRegisterBit(WM8960_REG_ROUT2_VOLUME, 7, 0)
 
     # DC and AC gain - allows signal to be higher than the DACs swing
     # (use only if your SPKVDD is high enough to handle a larger signal)
     # Valid inputs are 0-5
     # 0 = +0dB (1.0x boost) ... up to ... 5 = +5.1dB (1.8x boost)
-    def setSpeakerDcGain(self, gain:int):
+    def setSpeakerDcGain(self, gain:int) -> bool:
         # Limit incoming values max
         if gain > 5:
             gain = 5
-        self._writeRegisterMultiBits(WM8960_REG_CLASS_D_CONTROL_3, 5, 3, gain)
+        return self._writeRegisterMultiBits(WM8960_REG_CLASS_D_CONTROL_3, 5, 3, gain)
 
-    def setSpeakerAcGain(self, gain:int):
+    def setSpeakerAcGain(self, gain:int) -> bool:
         # Limit incoming values max
         if gain > 5:
             gain = 5
-        self._writeRegisterMultiBits(WM8960_REG_CLASS_D_CONTROL_3, 2, 0, gain)
+        return self._writeRegisterMultiBits(WM8960_REG_CLASS_D_CONTROL_3, 2, 0, gain)
 
     ## Digital audio interface control
 
@@ -1444,10 +1408,10 @@ class WM8960:
     # Loopback
     # When enabled, the output data from the ADC audio interface is fed
     # directly into the DAC data input.
-    def enableLoopBack(self):
-        self._writeRegisterBit(WM8960_REG_AUDIO_INTERFACE_2, 0, 1)
-    def disableLoopBack(self):
-        self._writeRegisterBit(WM8960_REG_AUDIO_INTERFACE_2, 0, 0)
+    def enableLoopBack(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_AUDIO_INTERFACE_2, 0, 1)
+    def disableLoopBack(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_AUDIO_INTERFACE_2, 0, 0)
 
     ## Clock controls
 
@@ -1484,97 +1448,101 @@ class WM8960:
     # DCLKDIV=111		(Divide by 16) = 705.6kHz
 
     # And now for the functions that will set these registers...
-    def enablePLL(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 0, 1)
-    def disablePLL(self):
-        self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 0, 0)
+    def enablePLL(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 0, 1)
+    def disablePLL(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 0, 0)
 
     # Valid options are WM8960_PLLPRESCALE_DIV_1, WM8960_PLLPRESCALE_DIV_2
-    def setPLLPRESCALE(self, div:bool):
-        self._writeRegisterBit(WM8960_REG_PLL_N, 4, div)
+    def setPLLPRESCALE(self, div:bool) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PLL_N, 4, div)
 
-    def setPLLN(self, n:int):
-        self._writeRegisterMultiBits(WM8960_REG_PLL_N, 3, 0, n)
+    def setPLLN(self, n:int) -> bool:
+        return self._writeRegisterMultiBits(WM8960_REG_PLL_N, 3, 0, n)
 
     # Send each nibble of 24-bit value for value K
-    def setPLLK(self, k:int):
-        self._writeRegisterMultiBits(WM8960_REG_PLL_K_1, 5, 0, (k >> 16) & 0x1F)
-        self._writeRegisterMultiBits(WM8960_REG_PLL_K_2, 8, 0, (k >> 8) & 0xFF)
-        self._writeRegisterMultiBits(WM8960_REG_PLL_K_3, 8, 0, k & 0xFF)
+    def setPLLK(self, k:int) -> bool:
+        if not self._writeRegisterMultiBits(WM8960_REG_PLL_K_1, 5, 0, (k >> 16) & 0x1F): return False
+        if not self._writeRegisterMultiBits(WM8960_REG_PLL_K_2, 8, 0, (k >> 8) & 0xFF): return False
+        return self._writeRegisterMultiBits(WM8960_REG_PLL_K_3, 8, 0, k & 0xFF)
 
     # 0=integer, 1=fractional
-    def setSMD(self, mode:bool):
-        self._writeRegisterBit(WM8960_REG_PLL_N, 5, mode)
+    def setSMD(self, mode:bool) -> bool:
+        return self._writeRegisterBit(WM8960_REG_PLL_N, 5, mode)
 
     # 0=MCLK, 1=PLL_output
-    def setCLKSEL(self, sel:bool):
-        self._writeRegisterBit(WM8960_REG_CLOCKING_1, 0, sel)
+    def setCLKSEL(self, sel:bool) -> bool:
+        return self._writeRegisterBit(WM8960_REG_CLOCKING_1, 0, sel)
 
     # (0=divide by 1), (2=div by 2) *1 and 3 are "reserved"
-    def setSYSCLKDIV(self, div:int):
-        self._writeRegisterMultiBits(WM8960_REG_CLOCKING_1, 2, 1, div)
+    def setSYSCLKDIV(self, div:int) -> bool:
+        return self._writeRegisterMultiBits(WM8960_REG_CLOCKING_1, 2, 1, div)
 
     # 000 = SYSCLK / (1.0*256). See ds pg 57 for other options
-    def setADCDIV(self, div:int):
-        self._writeRegisterMultiBits(WM8960_REG_CLOCKING_1, 8, 6, div)
+    def setADCDIV(self, div:int) -> bool:
+        return self._writeRegisterMultiBits(WM8960_REG_CLOCKING_1, 8, 6, div)
 
     # 000 = SYSCLK / (1.0*256). See ds pg 57 for other options
-    def setDACDIV(self, div:int):
-        self._writeRegisterMultiBits(WM8960_REG_CLOCKING_1, 5, 3, div)
+    def setDACDIV(self, div:int) -> bool:
+        return self._writeRegisterMultiBits(WM8960_REG_CLOCKING_1, 5, 3, div)
 
     # 0100 (4) = sufficiently high for 24bit, div by 4 allows for max word
     # length of 32bit
-    def setBCLKDIV(self, div:int):
-        self._writeRegisterMultiBits(WM8960_REG_CLOCKING_2, 3, 0, div)
+    def setBCLKDIV(self, div:int) -> bool:
+        return self._writeRegisterMultiBits(WM8960_REG_CLOCKING_2, 3, 0, div)
 
     # Class D amp, 111= SYSCLK/16, so 11.2896MHz/16 = 705.6KHz
-    def setDCLKDIV(self, div:int):
-        self._writeRegisterMultiBits(WM8960_REG_CLOCKING_2, 8, 6, div)
+    def setDCLKDIV(self, div:int) -> bool:
+        return self._writeRegisterMultiBits(WM8960_REG_CLOCKING_2, 8, 6, div)
 
     # Set LR clock to be the same for ADC & DAC (needed for loopback mode)
-    def setALRCGPIO(self):
-        self._writeRegisterBit(WM8960_REG_AUDIO_INTERFACE_2, 6, 1)
+    def setALRCGPIO(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_AUDIO_INTERFACE_2, 6, 1)
 
-    def enableMasterMode(self):
-        self._writeRegisterBit(WM8960_REG_AUDIO_INTERFACE_1, 6, 1)
+    def enableMasterMode(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_AUDIO_INTERFACE_1, 6, 1)
     
-    def enablePeripheralMode(self):
-        self._writeRegisterBit(WM8960_REG_AUDIO_INTERFACE_1, 6, 0)
+    def enablePeripheralMode(self) -> bool:
+        return self._writeRegisterBit(WM8960_REG_AUDIO_INTERFACE_1, 6, 0)
 
-    def setWL(self, word_length:int):
-        self._writeRegisterMultiBits(WM8960_REG_AUDIO_INTERFACE_1, 3, 2, word_length)
+    def setWL(self, word_length:int) -> bool:
+        return self._writeRegisterMultiBits(WM8960_REG_AUDIO_INTERFACE_1, 3, 2, word_length)
 
-    def setLRP(self, polarity:bool):
-        self._writeRegisterBit(WM8960_REG_AUDIO_INTERFACE_1, 4, polarity)
+    def setLRP(self, polarity:bool) -> bool:
+        return self._writeRegisterBit(WM8960_REG_AUDIO_INTERFACE_1, 4, polarity)
 
-    def setALRSWAP(self, swap:bool):
-        self._writeRegisterBit(WM8960_REG_AUDIO_INTERFACE_1, 8, swap)
+    def setALRSWAP(self, swap:bool) -> bool:
+        return self._writeRegisterBit(WM8960_REG_AUDIO_INTERFACE_1, 8, swap)
 
-    def setVROI(self, setting:bool):
-        self._writeRegisterBit(WM8960_REG_ADDITIONAL_CONTROL_3, 6, setting)
+    def setVROI(self, setting:bool) -> bool:
+        return self._writeRegisterBit(WM8960_REG_ADDITIONAL_CONTROL_3, 6, setting)
 
-    def setVSEL(self, setting:int):
-        self._writeRegisterMultiBits(WM8960_REG_ADDITIONAL_CONTROL_1, 7, 6, setting)
+    def setVSEL(self, setting:int) -> bool:
+        return self._writeRegisterMultiBits(WM8960_REG_ADDITIONAL_CONTROL_1, 7, 6, setting)
 
     # General-purpose register write
-    def writeRegister(self, reg:int, value:int) -> None:
+    def writeRegister(self, reg:int, value:int) -> bool:
         self._buf[0] = reg << 1 | value >> 8
         self._buf[1] = value & 0xff
-        with self.i2c_device as i2c:
-            i2c.write(self._buf)
+        try:
+            with self.i2c_device as i2c:
+                i2c.write(self._buf)
+        except OSError:
+            return False
         self._registerLocalCopy[reg] = value
+        return True
 
     # **The WM8960 does not support reading registers!!!
 
     # Writes a 0 or 1 to the desired bit in the desired register
-    def _writeRegisterBit(self, registerAddress:int, bitNumber:int, bitValue:bool) -> None:
+    def _writeRegisterBit(self, registerAddress:int, bitNumber:int, bitValue:bool) -> bool:
         regvalue = self._registerLocalCopy[registerAddress]
         if bitValue:
             regvalue |= 1<<bitNumber
         else:
             regvalue &= ~(1<<bitNumber)
 
-        self.writeRegister(registerAddress, regvalue)
+        return self.writeRegister(registerAddress, regvalue)
 
     '''
     This function writes data into the desired bits within the desired register
@@ -1586,7 +1554,7 @@ class WM8960:
     WM8960_REG_INPUT_BOOST_MIXER_1 register. Like so...
     _writeRegisterMultiBits(WM8960_REG_INPUT_BOOST_MIXER_1, 3, 1, 7);
     '''
-    def _writeRegisterMultiBits(self, registerAddress:int, settingMsbNum:int, settingLsbNum:int, setting:int):
+    def _writeRegisterMultiBits(self, registerAddress:int, settingMsbNum:int, settingLsbNum:int, setting:int) -> bool:
         regvalue = self._registerLocalCopy[registerAddress]
 
         # Clear bits we care about
@@ -1598,7 +1566,7 @@ class WM8960:
         regvalue |= setting << settingLsbNum
 
         # Write modified value to device
-        self.writeRegister(registerAddress, regvalue)
+        return self.writeRegister(registerAddress, regvalue)
 
     def convertDBtoSetting(self, dB:float, offset:float, stepSize:float, minDB:float, maxDB:float) -> int:
         '''
