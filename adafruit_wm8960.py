@@ -415,40 +415,8 @@ class WM8960:
         return div // 2
     
     def configureI2S(self, sample_rate:int, word_length:int = WM8960_WL_16BIT, master:bool = False):
-        # MCLK = 24 MHz
-        self.enablePLL() # Needed for class-d amp clock
-        self.setSMD(WM8960_PLL_MODE_FRACTIONAL)
-        self.setCLKSEL(WM8960_CLKSEL_PLL)
-
-        self.setPLLPRESCALE(WM8960_PLLPRESCALE_DIV_2)
-        self.setSYSCLKDIV(WM8960_SYSCLK_DIV_BY_2)
-        self.setBCLKDIV(4)
-
-        self.setDCLKDIV(WM8960_DCLKDIV_16)
-
-        if sample_rate in [8000, 12000, 16000, 24000, 32000, 48000]:
-            # SYSCLK = 12.288 MHz
-            # DCLK = 768.0kHz
-            self.setPLLN(8)
-            self.setPLLK(0x3126E8)
-
-            div = self._getDivBit(48000, sample_rate)
-            self.setADCDIV(div)
-            self.setDACDIV(div)
-        elif sample_rate in [11025, 22050, 44100]:
-            # SYSCLK = 11.2896 MHz
-            # DCLK = 705.6kHz
-            self.setPLLN(7)
-            self.setPLLK(0x86C226)
-
-            div = self._getDivBit(44100, sample_rate)
-            self.setADCDIV(div)
-            self.setDACDIV(div)
-        else:
-            raise Exception("Invalid sample rate")
-
+        self.setSampleRate(sample_rate)
         self.setWL(word_length)
-        
         if master:
             self.enableMasterMode()
         else:
@@ -483,6 +451,39 @@ class WM8960:
         self.enableSpeakers()
         # Adjust speaker volume
         self.setSpeakerVolumeDB(dB)
+
+    def setSampleRate(self, sample_rate:int):
+        # MCLK = 24 MHz
+        self.enablePLL() # Needed for class-d amp clock
+        self.setSMD(WM8960_PLL_MODE_FRACTIONAL)
+        self.setCLKSEL(WM8960_CLKSEL_PLL)
+
+        self.setPLLPRESCALE(WM8960_PLLPRESCALE_DIV_2)
+        self.setSYSCLKDIV(WM8960_SYSCLK_DIV_BY_2)
+        self.setBCLKDIV(4)
+
+        self.setDCLKDIV(WM8960_DCLKDIV_16)
+
+        if sample_rate in [8000, 12000, 16000, 24000, 32000, 48000]:
+            # SYSCLK = 12.288 MHz
+            # DCLK = 768.0kHz
+            self.setPLLN(8)
+            self.setPLLK(0x3126E8)
+
+            div = self._getDivBit(48000, sample_rate)
+            self.setADCDIV(div)
+            self.setDACDIV(div)
+        elif sample_rate in [11025, 22050, 44100]:
+            # SYSCLK = 11.2896 MHz
+            # DCLK = 705.6kHz
+            self.setPLLN(7)
+            self.setPLLK(0x86C226)
+
+            div = self._getDivBit(44100, sample_rate)
+            self.setADCDIV(div)
+            self.setDACDIV(div)
+        else:
+            raise Exception("Invalid sample rate")
 
     '''
     Necessary for all other functions of the CODEC
