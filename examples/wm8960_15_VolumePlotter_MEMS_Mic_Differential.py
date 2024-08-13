@@ -65,90 +65,56 @@ sBuffer = [0 for i in range(64)]
 codec = adafruit_wm8960.WM8960(board.I2C())
 
 # Setup signal flow to the ADC
-codec.enableLMIC()
-codec.enableRMIC()
+codec.enableMIC()
 
 # Connect from INPUT1 to "n" (aka inverting) inputs of PGAs.
-codec.connectLMN1()
-codec.connectRMN1()
+codec.connectMN1()
 
 # Disable mutes on PGA inputs (aka INTPUT1)
-codec.disableLINMUTE()
-codec.disableRINMUTE()
+codec.disableINMUTE()
 
 # Set pga volumes
-codec.setLINVOLDB(8.25) # Valid options are -17.25dB to +30dB (0.75dB steps)
-codec.setRINVOLDB(8.25) # Valid options are -17.25dB to +30dB (0.75dB steps)
+codec.setINVOLDB(8.25) # Valid options are -17.25dB to +30dB (0.75dB steps)
 
 # Set input boosts to get inputs 1 to the boost mixers
-codec.setLMICBOOST(adafruit_wm8960.WM8960_MIC_BOOST_GAIN_29DB)
-codec.setRMICBOOST(adafruit_wm8960.WM8960_MIC_BOOST_GAIN_29DB)
+codec.setMICBOOST(adafruit_wm8960.WM8960_MIC_BOOST_GAIN_29DB)
 
 # For MIC+ signal of differential mic signal
-codec.pgaLeftNonInvSignalSelect(adafruit_wm8960.WM8960_PGAL_LINPUT2)
-
-# For MIC+ signal of differential mic signal
-codec.pgaRightNonInvSignalSelect(adafruit_wm8960.WM8960_PGAR_RINPUT2)
+codec.pgaNonInvSignalSelect(adafruit_wm8960.WM8960_PGA_INPUT2)
 
 # Connect from MIC inputs (aka pga output) to boost mixers
-codec.connectLMIC2B()
-codec.connectRMIC2B()
+codec.connectMIC2B()
 
 # Enable boost mixers
-codec.enableAINL()
-codec.enableAINR()
+codec.enableAIN()
 
 # Connect LB2LO (booster to output mixer (analog bypass)
-codec.enableLB2LO()
-codec.enableRB2RO()
+codec.enableBoost2OutputMixer()
 
 # Disconnect from DAC outputs to output mixer
-codec.disableLD2LO()
-codec.disableRD2RO()
+codec.disableDac2OutputMixer()
 
 # Set gainstage between booster mixer and output mixer
-codec.setLB2LOVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
-codec.setRB2ROVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
+codec.setBoost2MixerGain(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
 
 # Enable output mixers
-codec.enableLOMIX()
-codec.enableROMIX()
+codec.enableOutputMixer()
 
-# CLOCK STUFF, These settings will get you 44.1KHz sample rate, and class-d freq at 705.6kHz
-codec.enablePLL() # Needed for class-d amp clock
-codec.setPLLPRESCALE(adafruit_wm8960.WM8960_PLLPRESCALE_DIV_2)
-codec.setSMD(adafruit_wm8960.WM8960_PLL_MODE_FRACTIONAL)
-codec.setCLKSEL(adafruit_wm8960.WM8960_CLKSEL_PLL)
-codec.setSYSCLKDIV(adafruit_wm8960.WM8960_SYSCLK_DIV_BY_2)
-codec.setBCLKDIV(4)
-codec.setDCLKDIV(adafruit_wm8960.WM8960_DCLKDIV_16)
-codec.setPLLN(7)
-codec.setPLLK(0x86C226)
-#codec.setADCDIV(0) # Default is 000 (what we need for 44.1KHz)
-#codec.setDACDIV(0) # Default is 000 (what we need for 44.1KHz)
-codec.setWL(adafruit_wm8960.WM8960_WL_16BIT)
-
-codec.enablePeripheralMode()
-#codec.enableMasterMode()
-#codec.setALRCGPIO() # Note, should not be changed while ADC is enabled.
+# Set sample rate, word length, and mode
+codec.configureI2S(sample_rate=44100, word_length=adafruit_wm8960.WM8960_WL_16BIT, master=False)
 
 # Enable ADCs, and disable DACs
-codec.enableAdcLeft()
-codec.enableAdcRight()
-codec.disableDacLeft()
-codec.disableDacRight()
+codec.enableAdc()
+codec.disableDac()
 codec.disableDacMute()
 
-#codec.enableLoopBack() # Loopback sends ADC data directly into DAC
+# Loopback sends ADC data directly into DAC
 codec.disableLoopBack()
 
 # Default is "soft mute" on, so we must disable mute to make channels active
 codec.enableDacMute()
 
-codec.enableHeadphones()
-codec.enableOUT3MIX() # Provides VMID as buffer for headphone ground
-
-codec.setHeadphoneVolumeDB(6.00)
+codec.configureHeadphones(dB=6.0, capless=True) # Capless provides VMID as buffer for headphone ground
 
 # Set up I2S
 audio = audiobusio.I2SOut(board.AUDIO_BCLK, board.AUDIO_SYNC, board.AUDIO_TXD)

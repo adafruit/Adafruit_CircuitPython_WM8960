@@ -38,47 +38,18 @@ import time, random
 import digitalio
 import ulab.numpy as np
 
+sample_rate = 44100
+
 codec = adafruit_wm8960.WM8960(board.I2C())
 
-# Connect from DAC outputs to output mixer
-codec.enableLD2LO()
-codec.enableRD2RO()
+# Set up codec as peripheral device with clock configured for desired sample rate (and 16-bit words)
+codec.configureI2S(sample_rate)
 
-# Enable output mixers
-codec.enableLOMIX()
-codec.enableROMIX()
+# Enable DAC and output mixer
+codec.configureDAC()
 
-# CLOCK STUFF, These settings will get you 44.1KHz sample rate, and class-d freq at 705.6kHz
-codec.enablePLL() # Needed for class-d amp clock
-codec.setPLLPRESCALE(adafruit_wm8960.WM8960_PLLPRESCALE_DIV_2)
-codec.setSMD(adafruit_wm8960.WM8960_PLL_MODE_FRACTIONAL)
-codec.setCLKSEL(adafruit_wm8960.WM8960_CLKSEL_PLL)
-codec.setSYSCLKDIV(adafruit_wm8960.WM8960_SYSCLK_DIV_BY_2)
-codec.setBCLKDIV(4)
-codec.setDCLKDIV(adafruit_wm8960.WM8960_DCLKDIV_16)
-codec.setPLLN(7)
-codec.setPLLK(0x86C226)
-#codec.setADCDIV(0) # Default is 000 (what we need for 44.1KHz)
-#codec.setDACDIV(0) # Default is 000 (what we need for 44.1KHz)
-codec.setWL(adafruit_wm8960.WM8960_WL_16BIT)
-
-codec.enablePeripheralMode()
-
-# Enable DACs
-codec.enableDacLeft()
-codec.enableDacRight()
-codec.disableDacMute()
-
-# Loopback sends ADC data directly into DAC
-codec.disableLoopBack()
-
-# Default is "soft mute" on, so we must disable mute to make channels active
-codec.disableDacMute()
-
-# Enable Headphones
-codec.enableHeadphones()
-codec.enableOUT3MIX() # Provides VMID as buffer for headphone ground
-codec.setHeadphoneVolumeDB(0.0)
+# Enable headphone output with OUT3 as capless buffer for headphone ground, adjust volume with dB
+codec.configureHeadphones(dB=0.0, capless=True)
 
 audio = audiobusio.I2SOut(board.AUDIO_BCLK, board.AUDIO_SYNC, board.AUDIO_TXD)
 

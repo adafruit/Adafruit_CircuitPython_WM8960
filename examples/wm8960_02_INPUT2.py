@@ -56,29 +56,21 @@ codec = adafruit_wm8960.WM8960(board.I2C())
 # Setup signal flow through the analog audio bypass connections
 
 # Set input boosts to get INPUT2 (both left and right) to the boost mixers
-codec.setLIN2BOOST(adafruit_wm8960.WM8960_BOOST_MIXER_GAIN_0DB)
-codec.setRIN2BOOST(adafruit_wm8960.WM8960_BOOST_MIXER_GAIN_0DB)
+codec.setIN2BOOST(adafruit_wm8960.WM8960_BOOST_MIXER_GAIN_0DB))
 
 # Enable input boost mixers
-codec.enableAINL()
-codec.enableAINR()
+codec.enableAIN()
 
 # Connect LB2LO (booster to output mixer [aka analog bypass])
-codec.enableLB2LO()
-codec.enableRB2RO()
+codec.enableBoost2OutputMixer()
 
 # Set gainstage between boost mixer and output mixers (analog bypass)
-codec.setLB2LOVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
-codec.setRB2ROVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
+codec.setBoost2MixerGain(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
 
 # Enable output mixers
-codec.enableLOMIX()
-codec.enableROMIX()
-
-codec.enableHeadphones()
-codec.enableOUT3MIX() # Provides VMID as buffer for headphone ground
+codec.enableOutputMixer()
 
 print("Volume set to +0dB")
-codec.setHeadphoneVolumeDB(0.00)
+codec.configureHeadphones(dB=0.0, capless=True) # Capless provides VMID as buffer for headphone ground
 
 print("Example complete. Listen to inputs 2 on headphone outputs.")

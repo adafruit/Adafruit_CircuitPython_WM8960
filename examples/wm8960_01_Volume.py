@@ -56,22 +56,16 @@ codec = adafruit_wm8960.WM8960(board.I2C())
 
 # Setup signal flow through the analog audio bypass connections
 
-# Enable left output mixer
-codec.enableLOMIX()
+# Enable output mixer
+codec.enableOutputMixer()
 
-# Enable bypass connection from Left INPUT3 to Left output mixer, note, the default gain on this input (LI2LOVOL) is -15dB
-codec.enableLI2LO()
+# Enable bypass connection from Left/Right INPUT3 to Left/Right output mixer, note, the default gain on these inputs (LI2LOVOL/RI2ROVOL) is -15dB
+codec.enableAdc2OutputMixer()
 
-# Sets volume control between "left input" to "left output mixer"
-codec.setLI2LOVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
+# Sets volume control between "left/right input" to "left/right output mixer"
+codec.setAdc2MixerGain(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
 
-# Now for the right channel of INPUT3
-codec.enableROMIX()
-codec.enableRI2RO()
-codec.setRI2ROVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
-
-codec.enableHeadphones()
-codec.enableOUT3MIX() # Provides VMID as buffer for headphone ground
+codec.configureHeadphones(capless=True) # Capless provides VMID as buffer for headphone ground
 
 print("Volume set to +6.00dB (max)")
 codec.setHeadphoneVolumeDB(6.00)

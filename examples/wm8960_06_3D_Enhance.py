@@ -62,60 +62,37 @@ print("Example 6 - 3D Enhance")
 codec = adafruit_wm8960.WM8960(board.I2C())
 
 # Setup signal flow to the ADC
-
-codec.enableLMIC()
-codec.enableRMIC()
+codec.enableMIC()
 
 # Connect from INPUT1 to "n" (aka inverting) inputs of PGAs.
-codec.connectLMN1()
-codec.connectRMN1()
+codec.connectMN1()
 
 # Disable mutes on PGA inputs (aka INTPUT1)
-codec.disableLINMUTE()
-codec.disableRINMUTE()
+codec.disableINMUTE()
 
 # Set input boosts to get inputs 1 to the boost mixers
-codec.setLMICBOOST(adafruit_wm8960.WM8960_MIC_BOOST_GAIN_0DB)
-codec.setRMICBOOST(adafruit_wm8960.WM8960_MIC_BOOST_GAIN_0DB)
-
-codec.connectLMIC2B()
-codec.connectRMIC2B()
+codec.setMICBOOST(adafruit_wm8960.WM8960_MIC_BOOST_GAIN_0DB)
+codec.connectMIC2B()
 
 # Enable boost mixers
-codec.enableAINL()
-codec.enableAINR()
+codec.enableAIN()
 
 # Disconnect LB2LO (booster to output mixer (analog bypass)
 # For this example, we are going to pass audio throught the ADC and DAC
-codec.disableLB2LO()
-codec.disableRB2RO()
+codec.disableBoost2OutputMixer()
 
 # Connect from DAC outputs to output mixer
-codec.enableLD2LO()
-codec.enableRD2RO()
+codec.enableDac2OutputMixer()
 
 # Set gainstage between booster mixer and output mixer
 # For this loopback example, we are going to keep these as low as they go
-codec.setLB2LOVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_NEG_21DB)
-codec.setRB2ROVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_NEG_21DB)
+codec.setBoost2MixerGain(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_NEG_21DB)
 
 # Enable output mixers
-codec.enableLOMIX()
-codec.enableROMIX()
+codec.enableOutputMixer()
 
-# CLOCK STUFF, These settings will get you 44.1KHz sample rate, and class-d freq at 705.6kHz
-codec.enablePLL() # Needed for class-d amp clock
-codec.setPLLPRESCALE(adafruit_wm8960.WM8960_PLLPRESCALE_DIV_2)
-codec.setSMD(adafruit_wm8960.WM8960_PLL_MODE_FRACTIONAL)
-codec.setCLKSEL(adafruit_wm8960.WM8960_CLKSEL_PLL)
-codec.setSYSCLKDIV(adafruit_wm8960.WM8960_SYSCLK_DIV_BY_2)
-codec.setBCLKDIV(4)
-codec.setDCLKDIV(adafruit_wm8960.WM8960_DCLKDIV_16)
-codec.setPLLN(7)
-codec.setPLLK(0x86C226)
-#codec.setADCDIV(0) # Default is 000 (what we need for 44.1KHz)
-#codec.setDACDIV(0) # Default is 000 (what we need for 44.1KHz)
-
+# Setup sample rate
+codec.setSampleRate(44100)
 codec.enableMasterMode()
 codec.setALRCGPIO() # Note, should not be changed while ADC is enabled.
 
@@ -129,11 +106,9 @@ codec.enableLoopBack()
 # Default is "soft mute" on, so we must disable mute to make channels active
 codec.disableDacMute()
 
-codec.enableHeadphones()
-codec.enableOUT3MIX() # Provides VMID as buffer for headphone ground
-
 print("Volume set to +0dB")
-codec.setHeadphoneVolumeDB(0.00)
+codec.configureHeadphones(dB=0.0, capless=True) # Capless provides VMID as buffer for headphone ground
+
 print("3D Enhance Depth set to 15 (max)")
 codec.set3dDepth(15)
 

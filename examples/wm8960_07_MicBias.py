@@ -43,13 +43,13 @@ codec.enableMicBias()
 # WM8960_MIC_BIAS_VOLTAGE_0_65_AVDD (0.65*AVDD)
 codec.setMicBiasVoltage(adafruit_wm8960.WM8960_MIC_BIAS_VOLTAGE_0_9_AVDD)
 print("Mic Bias enabled (0.9*AVDD)")
-delay(3000)
+time.sleep(3.0)
 
 # WM8960_MIC_BIAS_VOLTAGE_0_9_AVDD (0.9*AVDD) or
 # WM8960_MIC_BIAS_VOLTAGE_0_65_AVDD (0.65*AVDD)
 codec.setMicBiasVoltage(adafruit_wm8960.WM8960_MIC_BIAS_VOLTAGE_0_65_AVDD)
 print("Mic Bias enabled (0.65*AVDD)")
-delay(3000)
+time.sleep(3.0)
 
 codec.disableMicBias()
 print("Mic Bias disabled")

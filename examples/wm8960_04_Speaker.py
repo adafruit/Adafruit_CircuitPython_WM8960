@@ -61,53 +61,34 @@ print("Example 4 - Speaker")
 codec = adafruit_wm8960.WM8960(board.I2C())
 
 # Setup signal flow through the analog audio bypass connections
-codec.enableLMIC()
-codec.enableRMIC()
+codec.enableMIC()
 
 # Connect from INPUT1 to "n" (aka inverting) inputs of PGAs.
-codec.connectLMN1()
-codec.connectRMN1()
+codec.connectMN1()
 
-# Disable mutes on PGA inputs (aka INTPUT1)
-codec.disableLINMUTE()
-codec.disableRINMUTE()
+# Disable mutes on PGA inputs (aka INPUT1)
+codec.disableINMUTE()
 
 # Set input boosts to get inputs 1 to the boost mixers
-codec.setLMICBOOST(adafruit_wm8960.WM8960_MIC_BOOST_GAIN_0DB)
-codec.setRMICBOOST(adafruit_wm8960.WM8960_MIC_BOOST_GAIN_0DB)
-
-codec.connectLMIC2B()
-codec.connectRMIC2B()
+codec.setMICBOOST(adafruit_wm8960.WM8960_MIC_BOOST_GAIN_0DB)
+codec.connectMIC2B()
 
 # Enable boost mixers
-codec.enableAINL()
-codec.enableAINR()
+codec.enableAIN()
 
-# Connect LB2LO (booster to output mixer (analog bypass)
-codec.enableLB2LO()
-codec.enableRB2RO()
+# Connect booster to output mixer (analog bypass)
+codec.enableBoost2OutputMixer()
 
 # Set gainstage between booster mixer and output mixer
-codec.setLB2LOVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
-codec.setRB2ROVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
+codec.setBoost2MixerGain(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
 
 # Enable output mixers
-codec.enableLOMIX()
-codec.enableROMIX()
+codec.enableOutputMixer()
 
-# CLOCK STUFF, These settings will get you 44.1KHz sample rate, and class-d freq at 705.6kHz
-codec.enablePLL() # Needed for class-d amp clock
-codec.setPLLPRESCALE(adafruit_wm8960.WM8960_PLLPRESCALE_DIV_2)
-codec.setSMD(adafruit_wm8960.WM8960_PLL_MODE_FRACTIONAL)
-codec.setCLKSEL(adafruit_wm8960.WM8960_CLKSEL_PLL)
-codec.setSYSCLKDIV(adafruit_wm8960.WM8960_SYSCLK_DIV_BY_2)
-codec.setDCLKDIV(adafruit_wm8960.WM8960_DCLKDIV_16)
-codec.setPLLN(7)
-codec.setPLLK(0x86C226)
+# Set up clock for 44.1KHz
+codec.configureI2S(44100)
 
-codec.enableSpeakers()
-
-print("Volume set to +0dB")
-codec.setSpeakerVolumeDB(0.00)
+# Enable speakers at default volume of 0dB
+codec.configureSpeakers()
 
 print("Example complete. Listen to left/right INPUT1 on Speaker outputs.")

@@ -75,57 +75,41 @@ codec.setMicBiasVoltage(adafruit_wm8960.WM8960_MIC_BIAS_VOLTAGE_0_9_AVDD)
 print("Mic Bias enabled (0.9*AVDD)")
 
 # Setup signal flow through the analog audio bypass connections
-codec.enableLMIC()
-codec.enableRMIC()
+codec.enableMIC()
 
 # Connect from INPUT1 to "n" (aka inverting) inputs of PGAs.
-codec.connectLMN1()
-codec.connectRMN1()
+codec.connectMN1()
 
 # Disable mutes on PGA inputs (aka INTPUT1)
-codec.disableLINMUTE()
-codec.disableRINMUTE()
+codec.disableINMUTE()
 
 # Set pga volumes
-codec.setLINVOLDB(24.00) # Valid options are -17.25dB to +30.00dB
-codec.setRINVOLDB(24.00) # Valid options are -17.25dB to +30.00dB
+codec.setINVOLDB(24.00) # Valid options are -17.25dB to +30.00dB
 print("PGA gain set to +24dB")
 
 # Set input boosts to get inputs 1 to the boost mixers
-codec.setLMICBOOST(adafruit_wm8960.WM8960_MIC_BOOST_GAIN_0DB)
-codec.setRMICBOOST(adafruit_wm8960.WM8960_MIC_BOOST_GAIN_0DB)
+codec.setMICBOOST(adafruit_wm8960.WM8960_MIC_BOOST_GAIN_0DB)
 print("Mic boost stage set to 0dB")
 
 # For MIC+ signal of differential mic signal
-codec.pgaLeftNonInvSignalSelect(adafruit_wm8960.WM8960_PGAL_LINPUT2)
-
-# For MIC+ signal of differential mic signal
-codec.pgaRightNonInvSignalSelect(adafruit_wm8960.WM8960_PGAR_RINPUT2)
+codec.pgaNonInvSignalSelect(adafruit_wm8960.WM8960_PGA_INPUT2)
 print("Pga non-inverting inputs set to INPUT2s")
 
-codec.connectLMIC2B()
-codec.connectRMIC2B()
+codec.connectMIC2B()
 
 # Enable boost mixers
-codec.enableAINL()
-codec.enableAINR()
+codec.enableAIN()
 
 # Connect LB2LO (booster to output mixer (analog bypass)
-codec.enableLB2LO()
-codec.enableRB2RO()
+codec.enableBoost2OutputMixer()
 
 # Set gainstage between booster mixer and output mixer
-codec.setLB2LOVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
-codec.setRB2ROVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
+codec.setBoost2MixerGain(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
 
 # Enable output mixers
-codec.enableLOMIX()
-codec.enableROMIX()
-
-codec.enableHeadphones()
-codec.enableOUT3MIX() # Provides VMID as buffer for headphone ground
+codec.enableOutputMixer()
 
 print("Headphone output buffer volume set to +6dB (max)")
-codec.setHeadphoneVolumeDB(6.00)
+codec.configureHeadphones(dB=6.0, capless=True) # Capless provides VMID as buffer for headphone ground
 
 print("Example complete. Listen to Electret mics on headphone outputs.")
