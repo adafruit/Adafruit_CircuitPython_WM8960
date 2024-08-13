@@ -21,7 +21,7 @@ Introduction
     :target: https://github.com/psf/black
     :alt: Code Style: Black
 
-Barebones CircuitPython driver for WM8960 Stereo CODEC
+CircuitPython driver for WM8960 Stereo CODEC
 
 
 Dependencies
