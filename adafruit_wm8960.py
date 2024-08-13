@@ -693,6 +693,13 @@ class WM8960:
     def disableAdcRight(self):
         self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 2, 0)
 
+    def enableAdc(self):
+        self.enableAdcLeft()
+        self.enableAdcRight()
+    def disableAdc(self):
+        self.disableAdcLeft()
+        self.disableAdcRight()
+
     # ADC digital volume
     # Note, also needs to handle control of the ADCVU bits (volume update).
     # Valid inputs are 0-255
@@ -827,6 +834,13 @@ class WM8960:
         self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 7, 1)
     def disableDacRight(self):
         self._writeRegisterBit(WM8960_REG_PWR_MGMT_2, 7, 0)
+
+    def enableDac(self):
+        self.enableDacLeft()
+        self.enableDacRight()
+    def disableDac(self):
+        self.disableDacLeft()
+        self.disableDacRight()
 
     # DAC digital volume
     # Valid inputs are 0-255

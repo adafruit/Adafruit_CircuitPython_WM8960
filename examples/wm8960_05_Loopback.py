@@ -114,13 +114,11 @@ codec.enableMasterMode()
 codec.setALRCGPIO() # Note, should not be changed while ADC is enabled.
 
 # Enable ADCs and DACs
-codec.enableAdcLeft()
-codec.enableAdcRight()
-codec.enableDacLeft()
-codec.enableDacRight()
-codec.disableDacMute()
+codec.enableAdc()
+codec.enableDac()
 
-codec.enableLoopBack() # Loopback sends ADC data directly into DAC
+# Loopback sends ADC data directly into DAC
+codec.enableLoopBack()
 
 # Default is "soft mute" on, so we must disable mute to make channels active
 codec.disableDacMute()

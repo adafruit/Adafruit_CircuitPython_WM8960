@@ -95,10 +95,9 @@ codec.enablePeripheralMode()
 #codec.setALRCGPIO() # Note, should not be changed while ADC is enabled.
 
 # Enable DACs
-codec.enableDacLeft()
-codec.enableDacRight()
+codec.enableDac()
 
-#codec.enableLoopBack() # Loopback sends ADC data directly into DAC
+# Loopback sends ADC data directly into DAC
 codec.disableLoopBack()
 
 # Default is "soft mute" on, so we must disable mute to make channels active
