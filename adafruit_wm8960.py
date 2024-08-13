@@ -91,6 +91,9 @@ WM8960_PGAL_VMID = 2
 WM8960_PGAR_RINPUT2 = 0
 WM8960_PGAR_RINPUT3 = 1
 WM8960_PGAR_VMID = 2
+WM8960_PGA_INPUT2 = 0
+WM8960_PGA_INPUT3 = 1
+WM8960_PGA_VMID = 2
 
 # Mic (aka PGA) BOOST gain options
 WM8960_MIC_BOOST_GAIN_0DB = 0
@@ -419,6 +422,7 @@ class WM8960:
         self.setWL(word_length)
         if master:
             self.enableMasterMode()
+            self.setALRCGPIO() # Note, should not be changed while ADC is enabled.
         else:
             self.enablePeripheralMode()
     
@@ -521,6 +525,13 @@ class WM8960:
     def disableAINR(self) -> None:
         self._writeRegisterBit(WM8960_REG_PWR_MGMT_1, 4, 0)
 
+    def enableAIN(self) -> None:
+        self.enableAINL()
+        self.enableAINR()
+    def disableAIN(self) -> None:
+        self.disableAINL()
+        self.disableAINR()
+
     def enableLMIC(self) -> None:
         self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 5, 1)
     def disableLMIC(self) -> None:
@@ -531,6 +542,13 @@ class WM8960:
     def disableRMIC(self) -> None:
         self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 4, 0)
 
+    def enableMIC(self) -> None:
+        self.enableLMIC()
+        self.enableRMIC()
+    def disableMIC(self) -> None:
+        self.disableLMIC()
+        self.disableRMIC()
+
     def enableLMICBOOST(self) -> None:
         self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 5, 1)
     def disableLMICBOOST(self) -> None:
@@ -540,6 +558,13 @@ class WM8960:
         self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 4, 1)
     def disableRMICBOOST(self) -> None:
         self._writeRegisterBit(WM8960_REG_PWR_MGMT_3, 4, 0)
+
+    def enableMICBOOST(self) -> None:
+        self.enableLMICBOOST()
+        self.enableRMICBOOST()
+    def disableMICBOOST(self) -> None:
+        self.disableLMICBOOST()
+        self.disableRMICBOOST()
 
     # PGA input signal select
     # Each PGA (left and right) has a switch on its non-inverting input.
@@ -602,6 +627,11 @@ class WM8960:
             # Don't set any bits. When both RMP2 and RMP3 are cleared, then the signal is set to VMID
             pass
 
+    # 3 options: WM8960_PGA_INPUT2, WM8960_PGA_INPUT3, WM8960_PGA_VMID
+    def pgaNonInvSignalSelect(self, signal:int):
+        self.pgaLeftNonInvSignalSelect(signal)
+        self.pgaRightNonInvSignalSelect(signal)
+
     # Connections from each INPUT1 to the inverting input of its PGA
 
     # Connect LINPUT1 to inverting input of Left Input PGA
@@ -619,6 +649,13 @@ class WM8960:
     # Disconnect RINPUT1 from inverting input of Right Input PGA
     def disconnectRMN1(self):
         self._writeRegisterBit(WM8960_REG_ADCR_SIGNAL_PATH, 8, 0)
+
+    def connectMN1(self):
+        self.connectLMN1()
+        self.connectRMN1()
+    def disconnectMN1(self):
+        self.disconnectLMN1()
+        self.disconnectRMN1()
     
     # Connection from output of PGAs to downstream "boost mixers"
 
@@ -637,6 +674,13 @@ class WM8960:
     # Disconnect Right Input PGA to Right Input Boost mixer
     def disconnectRMIC2B(self):
         self._writeRegisterBit(WM8960_REG_ADCR_SIGNAL_PATH, 3, 0)
+
+    def connectMIC2B(self):
+        self.connectLMIC2B()
+        self.connectRMIC2B()
+    def disconnectMIC2B(self):
+        self.disconnectLMIC2B()
+        self.disconnectRMIC2B()
 
     # 0-63, (0 = -17.25dB) <<-- 0.75dB steps -->> (63 = +30dB)
     def setLINVOL(self, volume:int):
@@ -680,6 +724,16 @@ class WM8960:
         volume = self.convertDBtoSetting(dB, WM8960_PGA_GAIN_OFFSET, WM8960_PGA_GAIN_STEPSIZE, WM8960_PGA_GAIN_MIN, WM8960_PGA_GAIN_MAX)
         self.setRINVOL(volume)
 
+    def setINVOL(self, volume:int):
+        self.setLINVOL(volume)
+        self.setRINVOL(volume)
+
+    def setINVOLDB(self, dB:float):
+        # Create an unsigned integer volume setting variable we can send to setLINVOL()
+        volume = self.convertDBtoSetting(dB, WM8960_PGA_GAIN_OFFSET, WM8960_PGA_GAIN_STEPSIZE, WM8960_PGA_GAIN_MIN, WM8960_PGA_GAIN_MAX)
+        self.setLINVOL(volume)
+        self.setRINVOL(volume)
+
     # Zero Cross prevents zipper sounds on volume changes
     # Sets both left and right PGAs
     def enablePgaZeroCross(self):
@@ -700,6 +754,13 @@ class WM8960:
     def disableRINMUTE(self):
         self._writeRegisterBit(WM8960_REG_RIGHT_INPUT_VOLUME, 7, 0)
         self._writeRegisterBit(WM8960_REG_RIGHT_INPUT_VOLUME, 8, 1)
+
+    def enableINMUTE(self):
+        self.enableLINMUTE()
+        self.enableRINMUTE()
+    def disableINMUTE(self):
+        self.disableLINMUTE()
+        self.disableRINMUTE()
 
     # Causes left and right input PGA volumes to be updated
     # (LINVOL and RINVOL)
@@ -727,12 +788,9 @@ class WM8960:
             boost_gain = 3
         self._writeRegisterMultiBits(WM8960_REG_ADCR_SIGNAL_PATH, 5, 4, boost_gain)
 
-    # WM8960_BOOST_MIXER_GAIN_MUTE, WM8960_BOOST_MIXER_GAIN_NEG_12DB, ...
-    def setLIN3BOOST(self, boost_gain:int):
-        # Limit incoming values max
-        if boost_gain > 7:
-            boost_gain = 7
-        self._writeRegisterMultiBits(WM8960_REG_INPUT_BOOST_MIXER_1, 6, 4, boost_gain)
+    def setMICBOOST(self, boost_gain:int):
+        self.setLMICBOOST(boost_gain)
+        self.setRMICBOOST(boost_gain)
 
     # WM8960_BOOST_MIXER_GAIN_MUTE, WM8960_BOOST_MIXER_GAIN_NEG_12DB, ...
     def setLIN2BOOST(self, boost_gain:int):
@@ -742,18 +800,33 @@ class WM8960:
         self._writeRegisterMultiBits(WM8960_REG_INPUT_BOOST_MIXER_1, 3, 1, boost_gain)
 
     # WM8960_BOOST_MIXER_GAIN_MUTE, WM8960_BOOST_MIXER_GAIN_NEG_12DB, ...
+    def setRIN2BOOST(self, boost_gain:int):
+        # Limit incoming values max
+        if boost_gain > 7:
+            boost_gain = 7
+        self._writeRegisterMultiBits(WM8960_REG_INPUT_BOOST_MIXER_2, 3, 1, boost_gain)
+
+    def setIN2BOOST(self, boost_gain:int):
+        self.setLIN2BOOST(boost_gain)
+        self.setRIN2BOOST(boost_gain)
+
+    # WM8960_BOOST_MIXER_GAIN_MUTE, WM8960_BOOST_MIXER_GAIN_NEG_12DB, ...
+    def setLIN3BOOST(self, boost_gain:int):
+        # Limit incoming values max
+        if boost_gain > 7:
+            boost_gain = 7
+        self._writeRegisterMultiBits(WM8960_REG_INPUT_BOOST_MIXER_1, 6, 4, boost_gain)
+
+    # WM8960_BOOST_MIXER_GAIN_MUTE, WM8960_BOOST_MIXER_GAIN_NEG_12DB, ...
     def setRIN3BOOST(self, boost_gain:int):
         # Limit incoming values max
         if boost_gain > 7:
             boost_gain = 7
         self._writeRegisterMultiBits(WM8960_REG_INPUT_BOOST_MIXER_2, 6, 4, boost_gain)
 
-    # WM8960_BOOST_MIXER_GAIN_MUTE, WM8960_BOOST_MIXER_GAIN_NEG_12DB, ...
-    def setRIN2BOOST(self, boost_gain:int):
-        # Limit incoming values max
-        if boost_gain > 7:
-            boost_gain = 7
-        self._writeRegisterMultiBits(WM8960_REG_INPUT_BOOST_MIXER_2, 3, 1, boost_gain)
+    def setIN3BOOST(self, boost_gain:int):
+        self.setLIN3BOOST(boost_gain)
+        self.setRIN3BOOST(boost_gain)
 
     # Mic Bias control
     def enableMicBias(self):
@@ -977,6 +1050,15 @@ class WM8960:
     # Causes left and right input DAC volumes to be updated
     def dacRightDACVUSet(self):
         self._writeRegisterBit(WM8960_REG_RIGHT_DAC_VOLUME, 8, 1)
+
+    def setDacDigitalVolume(self, volume:int):
+        self.setDacLeftDigitalVolume(volume)
+        self.setDacRightDigitalVolume(volume)
+    
+    def setDacDigitalVolumeDB(self, dB:float):
+        # Create an unsigned integer volume setting variable we can send to setDacRightDigitalVolume()
+        volume = self.convertDBtoSetting(dB, WM8960_DAC_GAIN_OFFSET, WM8960_DAC_GAIN_STEPSIZE, WM8960_DAC_GAIN_MIN, WM8960_DAC_GAIN_MAX)
+        self.setDacDigitalVolume(volume)
 
     # DAC mute
     def enableDacMute(self):
