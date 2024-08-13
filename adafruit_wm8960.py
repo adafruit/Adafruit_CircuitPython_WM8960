@@ -396,6 +396,10 @@ class WM8960:
         self._registerLocalCopy = [0x0000 for i in range(len(WM8960_REGISTER_DEFAULTS))]
         self.reset()
 
+        # General setup
+        self.enableVREF()
+        self.enableVMID()
+
     def isConnected(self) -> bool:
         # TODO: Check I2C or I2CDevice
         return True

@@ -60,10 +60,6 @@ print("Example 4 - Speaker")
 
 codec = adafruit_wm8960.WM8960(board.I2C())
 
-# General setup needed
-codec.enableVREF()
-codec.enableVMID()
-
 # Setup signal flow through the analog audio bypass connections
 codec.enableLMIC()
 codec.enableRMIC()

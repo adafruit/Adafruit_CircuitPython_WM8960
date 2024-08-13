@@ -67,10 +67,6 @@ print("Example 14 - Electret Mics")
 
 codec = adafruit_wm8960.WM8960(board.I2C())
 
-# General setup needed
-codec.enableVREF()
-codec.enableVMID()
-
 codec.enableMicBias()
 
 # WM8960_MIC_BIAS_VOLTAGE_0_9_AVDD (0.9*AVDD) or

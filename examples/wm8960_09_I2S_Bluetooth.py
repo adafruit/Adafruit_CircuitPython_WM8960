@@ -59,10 +59,6 @@ print("Example 9 - Bluetooth Audio")
 
 codec = adafruit_wm8960.WM8960(board.I2C())
 
-# General setup needed
-codec.enableVREF()
-codec.enableVMID()
-
 # Connect from DAC outputs to output mixer
 codec.enableLD2LO()
 codec.enableRD2RO()

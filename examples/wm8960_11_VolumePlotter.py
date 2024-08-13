@@ -57,10 +57,6 @@ import adafruit_wm8960
 
 codec = adafruit_wm8960.WM8960(board.I2C())
 
-# General setup needed
-codec.enableVREF()
-codec.enableVMID()
-
 # Setup signal flow to the ADC
 
 codec.enableLMIC()

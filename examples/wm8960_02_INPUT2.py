@@ -53,10 +53,6 @@ print("Example 2 - INPUT2")
 
 codec = adafruit_wm8960.WM8960(board.I2C())
 
-# General setup needed
-codec.enableVREF()
-codec.enableVMID()
-
 # Setup signal flow through the analog audio bypass connections
 
 # Set input boosts to get INPUT2 (both left and right) to the boost mixers
