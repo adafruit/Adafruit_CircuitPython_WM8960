@@ -125,8 +125,7 @@ codec.setRB2ROVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_NEG_21DB)
 codec.enableLOMIX()
 codec.enableROMIX()
 
-# CLOCK STUFF, These settings will get you 44.1KHz sample rate, and class-d
-# freq at 705.6kHz
+# CLOCK STUFF, These settings will get you 44.1KHz sample rate, and class-d freq at 705.6kHz
 codec.enablePLL() # Needed for class-d amp clock
 codec.setPLLPRESCALE(adafruit_wm8960.WM8960_PLLPRESCALE_DIV_2)
 codec.setSMD(adafruit_wm8960.WM8960_PLL_MODE_FRACTIONAL)
@@ -135,7 +134,7 @@ codec.setSYSCLKDIV(adafruit_wm8960.WM8960_SYSCLK_DIV_BY_2)
 codec.setBCLKDIV(4)
 codec.setDCLKDIV(adafruit_wm8960.WM8960_DCLKDIV_16)
 codec.setPLLN(7)
-codec.setPLLK(0x86, 0xC2, 0x26) # PLLK=86C226h
+codec.setPLLK(0x86C226)
 #codec.setADCDIV(0) # Default is 000 (what we need for 44.1KHz)
 #codec.setDACDIV(0) # Default is 000 (what we need for 44.1KHz)
 

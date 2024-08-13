@@ -134,7 +134,7 @@ codec.setSYSCLKDIV(adafruit_wm8960.WM8960_SYSCLK_DIV_BY_2)
 codec.setBCLKDIV(4)
 codec.setDCLKDIV(adafruit_wm8960.WM8960_DCLKDIV_16)
 codec.setPLLN(7)
-codec.setPLLK(0x86, 0xC2, 0x26) # PLLK=86C226h
+codec.setPLLK(0x86C226)
 #codec.setADCDIV(0) # Default is 000 (what we need for 44.1KHz)
 #codec.setDACDIV(0) # Default is 000 (what we need for 44.1KHz)
 

@@ -1264,10 +1264,10 @@ class WM8960:
         self._writeRegisterMultiBits(WM8960_REG_PLL_N, 3, 0, n)
 
     # Send each nibble of 24-bit value for value K
-    def setPLLK(self, one:int, two:int, three:int):
-        self._writeRegisterMultiBits(WM8960_REG_PLL_K_1, 5, 0, one)
-        self._writeRegisterMultiBits(WM8960_REG_PLL_K_2, 8, 0, two)
-        self._writeRegisterMultiBits(WM8960_REG_PLL_K_3, 8, 0, three)
+    def setPLLK(self, k:int):
+        self._writeRegisterMultiBits(WM8960_REG_PLL_K_1, 5, 0, (k >> 16) & 0x1F)
+        self._writeRegisterMultiBits(WM8960_REG_PLL_K_2, 8, 0, (k >> 8) & 0xFF)
+        self._writeRegisterMultiBits(WM8960_REG_PLL_K_3, 8, 0, k & 0xFF)
 
     # 0=integer, 1=fractional
     def setSMD(self, mode:bool):
