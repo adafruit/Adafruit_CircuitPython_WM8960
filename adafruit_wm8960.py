@@ -746,6 +746,16 @@ class WM8960:
     def adcRightADCVUSet(self):
         self._writeRegisterBit(WM8960_REG_RIGHT_ADC_VOLUME, 8, 1)
 
+    # Control ADC volume in a stereo pair
+    def setAdcDigitalVolume(self, volume:int):
+        self.setAdcLeftDigitalVolume(volume)
+        self.setAdcRightDigitalVolume(volume)
+
+    def setAdcDigitalVolumeDB(self, dB:float):
+        # Create an unsigned integer volume setting variable we can send to setAdcLeftDigitalVolume()
+        volume = self.convertDBtoSetting(dB, WM8960_ADC_GAIN_OFFSET, WM8960_ADC_GAIN_STEPSIZE, WM8960_ADC_GAIN_MIN, WM8960_ADC_GAIN_MAX)
+        self.setAdcDigitalVolume(volume)
+
     ## ALC
 
     # Automatic Level Control
@@ -1008,6 +1018,48 @@ class WM8960:
         self._writeRegisterBit(WM8960_REG_MONO_OUT_MIX_2, 7, 1)
     def disableRI2MO(self):
         self._writeRegisterBit(WM8960_REG_MONO_OUT_MIX_2, 7, 0)
+
+    # Paired stereo functions to enable/disable output mixers
+    def enableAdc2OutputMixer(self):
+        self.enableLI2LO()
+        self.enableRI2RO()
+    def disableAdc2OutputMixer(self):
+        self.disableLI2LO()
+        self.disableRI2RO()
+    def setAdc2MixerGain(self, volume:int):
+        self.setLI2LOVOL(volume)
+        self.setRI2ROVOL(volume)
+
+    def enableBoost2OutputMixer(self):
+        self.enableLB2LO()
+        self.enableRB2RO()
+    def disableBoost2OutputMixer(self):
+        self.disableLB2LO()
+        self.disableRB2RO()
+    def setBoost2MixerGain(self, volume:int):
+        self.setLB2LOVOL(volume)
+        self.setRB2ROVOL(volume)
+
+    def enableDac2OutputMixer(self):
+        self.enableLD2LO()
+        self.enableRD2RO()
+    def disableDac2OutputMixer(self):
+        self.disableLD2LO()
+        self.disableRD2RO()
+    
+    def enableAdc2MonoOutput(self):
+        self.enableLI2MO()
+        self.enableRI2MO()
+    def disableAdc2MonoOutput(self):
+        self.disableLI2MO()
+        self.disableRI2MO()
+
+    def enableOutputMixer(self):
+        self.enableLOMIX()
+        self.enableROMIX()
+    def disableOutputMixer(self):
+        self.disableLOMIX()
+        self.disableROMIX()
 
     # Sets the VMID signal to one of three possible settings.
     # 4 options:
