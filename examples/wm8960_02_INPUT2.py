@@ -56,7 +56,7 @@ codec = adafruit_wm8960.WM8960(board.I2C())
 # Setup signal flow through the analog audio bypass connections
 
 # Set input boosts to get INPUT2 (both left and right) to the boost mixers
-codec.setIN2BOOST(adafruit_wm8960.WM8960_BOOST_MIXER_GAIN_0DB))
+codec.setIN2BOOST(adafruit_wm8960.WM8960_BOOST_MIXER_GAIN_0DB)
 
 # Enable input boost mixers
 codec.enableAIN()
