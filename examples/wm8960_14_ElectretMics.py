@@ -101,13 +101,13 @@ codec.connectMIC2B()
 codec.enableAIN()
 
 # Connect LB2LO (booster to output mixer (analog bypass)
-codec.enableBoost2OutputMixer()
+codec.enableB2O()
 
 # Set gainstage between booster mixer and output mixer
-codec.setBoost2MixerGain(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
+codec.setB2OVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
 
 # Enable output mixers
-codec.enableOutputMixer()
+codec.enableOMIX()
 
 print("Headphone output buffer volume set to +6dB (max)")
 codec.configureHeadphones(dB=6.0, capless=True) # Capless provides VMID as buffer for headphone ground

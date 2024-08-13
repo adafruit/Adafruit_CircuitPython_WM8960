@@ -89,16 +89,16 @@ codec.connectMIC2B()
 codec.enableAIN()
 
 # Connect LB2LO (booster to output mixer (analog bypass)
-codec.enableBoost2OutputMixer()
+codec.enableB2O()
 
 # Disconnect from DAC outputs to output mixer
-codec.disableDac2OutputMixer()
+codec.disableD2O()
 
 # Set gainstage between booster mixer and output mixer
-codec.setBoost2MixerGain(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
+codec.setB2OVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
 
 # Enable output mixers
-codec.enableOutputMixer()
+codec.enableOMIX()
 
 # Set sample rate, word length, and mode
 codec.configureI2S(sample_rate=44100, word_length=adafruit_wm8960.WM8960_WL_16BIT, master=False)

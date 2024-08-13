@@ -60,14 +60,14 @@ print("Example 9 - Bluetooth Audio")
 codec = adafruit_wm8960.WM8960(board.I2C())
 
 # Connect from DAC outputs to output mixer
-codec.enableDac2OutputMixer()
+codec.enableD2O()
 
 # Set gainstage between booster mixer and output mixer
 # For this loopback example, we are going to keep these as low as they go
-codec.setBoost2MixerGain(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_NEG_21DB)
+codec.setB2OVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_NEG_21DB)
 
 # Enable output mixers
-codec.enableOutputMixer()
+codec.enableOMIX()
 
 # Setup sample rate, word length, and I2S mode
 codec.configureI2S(sample_rate=44100, word_length=adafruit_wm8960.WM8960_WL_16BIT, master=False)

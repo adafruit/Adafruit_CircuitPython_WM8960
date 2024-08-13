@@ -77,13 +77,13 @@ codec.connectMIC2B()
 codec.enableAIN()
 
 # Connect booster to output mixer (analog bypass)
-codec.enableBoost2OutputMixer()
+codec.enableB2O()
 
 # Set gainstage between booster mixer and output mixer
-codec.setBoost2MixerGain(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
+codec.setB2OVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
 
 # Enable output mixers
-codec.enableOutputMixer()
+codec.enableOMIX()
 
 # Set up clock for 44.1KHz
 codec.configureI2S(44100)

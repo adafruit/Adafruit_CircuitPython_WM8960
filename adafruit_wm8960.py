@@ -428,9 +428,9 @@ class WM8960:
     
     def configureDAC(self, loopback:bool = False):
         # Connect from DAC outputs to output mixer
-        self.enableDac2OutputMixer()
+        self.enableD2O()
         # Enable output mixers
-        self.enableOutputMixer()
+        self.enableOMIX()
         # Enable DACs
         self.enableDac()
         # Default is "soft mute" on, so we must disable mute to make channels active
@@ -1183,44 +1183,44 @@ class WM8960:
         self._writeRegisterBit(WM8960_REG_MONO_OUT_MIX_2, 7, 0)
 
     # Paired stereo functions to enable/disable output mixers
-    def enableAdc2OutputMixer(self):
+    def enableI2O(self):
         self.enableLI2LO()
         self.enableRI2RO()
-    def disableAdc2OutputMixer(self):
+    def disableI2O(self):
         self.disableLI2LO()
         self.disableRI2RO()
-    def setAdc2MixerGain(self, volume:int):
+    def setI2OVOL(self, volume:int):
         self.setLI2LOVOL(volume)
         self.setRI2ROVOL(volume)
 
-    def enableBoost2OutputMixer(self):
+    def enableB2O(self):
         self.enableLB2LO()
         self.enableRB2RO()
-    def disableBoost2OutputMixer(self):
+    def disableB2O(self):
         self.disableLB2LO()
         self.disableRB2RO()
-    def setBoost2MixerGain(self, volume:int):
+    def setB2OVOL(self, volume:int):
         self.setLB2LOVOL(volume)
         self.setRB2ROVOL(volume)
 
-    def enableDac2OutputMixer(self):
+    def enableD2O(self):
         self.enableLD2LO()
         self.enableRD2RO()
-    def disableDac2OutputMixer(self):
+    def disableD2O(self):
         self.disableLD2LO()
         self.disableRD2RO()
     
-    def enableAdc2MonoOutput(self):
+    def enableI2MO(self):
         self.enableLI2MO()
         self.enableRI2MO()
-    def disableAdc2MonoOutput(self):
+    def disableI2MO(self):
         self.disableLI2MO()
         self.disableRI2MO()
 
-    def enableOutputMixer(self):
+    def enableOMIX(self):
         self.enableLOMIX()
         self.enableROMIX()
-    def disableOutputMixer(self):
+    def disableOMIX(self):
         self.disableLOMIX()
         self.disableROMIX()
 
