@@ -1359,7 +1359,7 @@ class WM8960:
         # Clear bits we care about
         numOfBits = (settingMsbNum - settingLsbNum) + 1
         for i in range(numOfBits):
-            regvalue &= ~(1 << (settingLsbNum + 1))
+            regvalue &= ~(1 << (settingLsbNum + i))
 
         # Shift and set the bits from in incoming desired setting value
         regvalue |= setting << settingLsbNum
