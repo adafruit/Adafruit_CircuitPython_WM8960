@@ -403,6 +403,86 @@ class WM8960:
     def isConnected(self) -> bool:
         # TODO: Check I2C or I2CDevice
         return True
+    
+    def _getDivBit(self, src:int, dest:int):
+        div = (src * 2) // dest
+        if div < 2 or div > 12: return 0
+        if div == 2: div = 0
+        elif div == 3: div = 2
+        elif div == 10: return 0
+        elif div == 11: div = 10
+        if div % 2 == 1: return 0
+        return div // 2
+    
+    def configureI2S(self, sample_rate:int, word_length:int = WM8960_WL_16BIT, master:bool = False):
+        # MCLK = 24 MHz
+        self.enablePLL() # Needed for class-d amp clock
+        self.setSMD(WM8960_PLL_MODE_FRACTIONAL)
+        self.setCLKSEL(WM8960_CLKSEL_PLL)
+
+        self.setPLLPRESCALE(WM8960_PLLPRESCALE_DIV_2)
+        self.setSYSCLKDIV(WM8960_SYSCLK_DIV_BY_2)
+        self.setBCLKDIV(4)
+
+        self.setDCLKDIV(WM8960_DCLKDIV_16)
+
+        if sample_rate in [8000, 12000, 16000, 24000, 32000, 48000]:
+            # SYSCLK = 12.288 MHz
+            # DCLK = 768.0kHz
+            self.setPLLN(8)
+            self.setPLLK(0x3126E8)
+
+            div = self._getDivBit(48000, sample_rate)
+            self.setADCDIV(div)
+            self.setDACDIV(div)
+        elif sample_rate in [11025, 22050, 44100]:
+            # SYSCLK = 11.2896 MHz
+            # DCLK = 705.6kHz
+            self.setPLLN(7)
+            self.setPLLK(0x86C226)
+
+            div = self._getDivBit(44100, sample_rate)
+            self.setADCDIV(div)
+            self.setDACDIV(div)
+        else:
+            raise Exception("Invalid sample rate")
+
+        self.setWL(word_length)
+        
+        if master:
+            self.enableMasterMode()
+        else:
+            self.enablePeripheralMode()
+    
+    def configureDAC(self, loopback:bool = False):
+        # Connect from DAC outputs to output mixer
+        self.enableDac2OutputMixer()
+        # Enable output mixers
+        self.enableOutputMixer()
+        # Enable DACs
+        self.enableDac()
+        # Default is "soft mute" on, so we must disable mute to make channels active
+        self.disableDacMute()
+
+        # Loopback sends ADC data directly into DAC
+        if loopback:
+            self.enableLoopBack()
+        else:
+            self.disableLoopBack()
+    
+    def configureHeadphones(self, dB:float = 0.0, capless:bool = True):
+        # Enable headphone output
+        self.enableHeadphones()
+        # Provides VMID as buffer for headphone ground on OUT3
+        if capless: self.enableOUT3MIX()
+        # Adjust headphone volume
+        self.setHeadphoneVolumeDB(dB)
+    
+    def configureSpeakers(self, dB:float = 0.0):
+        # Enable speaker output
+        self.enableSpeakers()
+        # Adjust speaker volume
+        self.setSpeakerVolumeDB(dB)
 
     '''
     Necessary for all other functions of the CODEC
