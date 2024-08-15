@@ -20,7 +20,7 @@ authors = [
     {name = "Adafruit Industries", email = "circuitpython@adafruit.com"},
     {name = "Cooper Dalrymple", email = "me@dcdalrymple.com"}
 ]
-urls = {Homepage = "https://github.com/dcooperdalrymple/Adafruit_CircuitPython_WM8960"}
+urls = {Homepage = "https://github.com/adafruit/Adafruit_CircuitPython_WM8960"}
 keywords = [
     "adafruit",
     "blinka",
