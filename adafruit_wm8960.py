@@ -403,9 +403,6 @@ class WM8960:
         self.enableVREF()
         self.enableVMID()
 
-    def isConnected(self) -> bool:
-        # TODO: Check I2C or I2CDevice
-        return True
     
     def _getDivBit(self, src:int, dest:int) -> int:
         div = (src * 2) // dest
