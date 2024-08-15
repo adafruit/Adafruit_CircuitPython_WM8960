@@ -70,7 +70,7 @@ codec.disableINMUTE()
 codec.setINVOLDB(0.00) # Valid options are -17.25dB to +30dB (0.75dB steps)
 
 # Set input boosts to get inputs 1 to the boost mixers
-codec.setMICBOOST(adafruit_wm8960.WM8960_MIC_BOOST_GAIN_0DB)
+codec.setMICBOOST(adafruit_wm8960.MIC_BOOST_GAIN_0DB)
 
 # Connect from MIC inputs (aka pga output) to boost mixers
 codec.connectMIC2B()
@@ -85,13 +85,13 @@ codec.enableB2O()
 codec.disableD2O()
 
 # Set gainstage between booster mixer and output mixer
-codec.setB2OVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
+codec.setB2OVOL(adafruit_wm8960.OUTPUT_MIXER_GAIN_0DB)
 
 # Enable output mixers
 codec.enableOMIX()
 
 # Configure I2S
-codec.configureI2S(sample_rate=44100, word_length=adafruit_wm8960.WM8960_WL_16BIT, master=False)
+codec.configureI2S(sample_rate=44100, word_length=adafruit_wm8960.WL_16BIT, master=False)
 
 # Enable ADCs, and disable DACs
 codec.enableAdc()

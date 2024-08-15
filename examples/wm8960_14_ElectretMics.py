@@ -69,9 +69,9 @@ codec = adafruit_wm8960.WM8960(board.I2C())
 
 codec.enableMicBias()
 
-# WM8960_MIC_BIAS_VOLTAGE_0_9_AVDD (0.9*AVDD) or
-# WM8960_MIC_BIAS_VOLTAGE_0_65_AVDD (0.65*AVDD)
-codec.setMicBiasVoltage(adafruit_wm8960.WM8960_MIC_BIAS_VOLTAGE_0_9_AVDD)
+# MIC_BIAS_VOLTAGE_0_9_AVDD (0.9*AVDD) or
+# MIC_BIAS_VOLTAGE_0_65_AVDD (0.65*AVDD)
+codec.setMicBiasVoltage(adafruit_wm8960.MIC_BIAS_VOLTAGE_0_9_AVDD)
 print("Mic Bias enabled (0.9*AVDD)")
 
 # Setup signal flow through the analog audio bypass connections
@@ -88,11 +88,11 @@ codec.setINVOLDB(24.00) # Valid options are -17.25dB to +30.00dB
 print("PGA gain set to +24dB")
 
 # Set input boosts to get inputs 1 to the boost mixers
-codec.setMICBOOST(adafruit_wm8960.WM8960_MIC_BOOST_GAIN_0DB)
+codec.setMICBOOST(adafruit_wm8960.MIC_BOOST_GAIN_0DB)
 print("Mic boost stage set to 0dB")
 
 # For MIC+ signal of differential mic signal
-codec.pgaNonInvSignalSelect(adafruit_wm8960.WM8960_PGA_INPUT2)
+codec.pgaNonInvSignalSelect(adafruit_wm8960.PGA_INPUT2)
 print("Pga non-inverting inputs set to INPUT2s")
 
 codec.connectMIC2B()
@@ -104,7 +104,7 @@ codec.enableAIN()
 codec.enableB2O()
 
 # Set gainstage between booster mixer and output mixer
-codec.setB2OVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
+codec.setB2OVOL(adafruit_wm8960.OUTPUT_MIXER_GAIN_0DB)
 
 # Enable output mixers
 codec.enableOMIX()

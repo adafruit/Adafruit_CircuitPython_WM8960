@@ -63,7 +63,7 @@ codec.enableOMIX()
 codec.enableI2O()
 
 # Sets volume control between "left/right input" to "left/right output mixer"
-codec.setI2OVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
+codec.setI2OVOL(adafruit_wm8960.OUTPUT_MIXER_GAIN_0DB)
 
 codec.configureHeadphones(capless=True) # Capless provides VMID as buffer for headphone ground
 

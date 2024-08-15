@@ -94,11 +94,11 @@ Usage Example
     codec.enableMIC()
     codec.enableMN1()
     codec.enableINMUTE()
-    codec.setMICBOOST(adafruit_wm8960.WM8960_MIC_BOOST_GAIN_0DB)
+    codec.setMICBOOST(adafruit_wm8960.MIC_BOOST_GAIN_0DB)
     codec.connectMIC2B()
     codec.enableAIN()
     codec.enableB2O()
-    codec.setB2OVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_0DB)
+    codec.setB2OVOL(adafruit_wm8960.OUTPUT_MIXER_GAIN_0DB)
     codec.enableOMIX()
     codec.configureHeadphones()
 

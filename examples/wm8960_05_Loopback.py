@@ -62,7 +62,7 @@ codec.connectMN1()
 codec.disableINMUTE()
 
 # Set input boosts to get inputs 1 to the boost mixers
-codec.setMICBOOST(adafruit_wm8960.WM8960_MIC_BOOST_GAIN_0DB)
+codec.setMICBOOST(adafruit_wm8960.MIC_BOOST_GAIN_0DB)
 codec.connectMIC2B()
 
 # Enable boost mixers
@@ -77,7 +77,7 @@ codec.enableD2O()
 
 # Set gainstage between booster mixer and output mixer
 # For this loopback example, we are going to keep these as low as they go
-codec.setB2OVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_NEG_21DB)
+codec.setB2OVOL(adafruit_wm8960.OUTPUT_MIXER_GAIN_NEG_21DB)
 
 # Enable output mixers
 codec.enableOMIX()

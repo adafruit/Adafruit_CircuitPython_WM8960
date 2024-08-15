@@ -77,7 +77,7 @@ codec.connectMN1()
 codec.disableINMUTE()
 
 # Set input boosts to get inputs 1 to the boost mixers
-codec.setMICBOOST(adafruit_wm8960.WM8960_MIC_BOOST_GAIN_0DB)
+codec.setMICBOOST(adafruit_wm8960.MIC_BOOST_GAIN_0DB)
 codec.connectMIC2B()
 
 # Enable boost mixers
@@ -92,7 +92,7 @@ codec.enableD2O()
 
 # Set gainstage between booster mixer and output mixer
 # For this loopback example, we are going to keep these as low as they go
-codec.setB2OVOL(adafruit_wm8960.WM8960_OUTPUT_MIXER_GAIN_NEG_21DB)
+codec.setB2OVOL(adafruit_wm8960.OUTPUT_MIXER_GAIN_NEG_21DB)
 
 # Enable output mixers
 codec.enableOMIX()
@@ -121,13 +121,13 @@ codec.configureHeadphones(dB=0.0, capless=True) # Capless provides VMID as buffe
 # Minimizes "zipper" noise when chaning gains.
 codec.enablePgaZeroCross()
 
-codec.enableAlc(adafruit_wm8960.WM8960_ALC_MODE_STEREO)
-codec.setAlcTarget(adafruit_wm8960.WM8960_ALC_TARGET_LEVEL_NEG_6DB)
-codec.setAlcDecay(adafruit_wm8960.WM8960_ALC_DECAY_TIME_192MS)
-codec.setAlcAttack(adafruit_wm8960.WM8960_ALC_ATTACK_TIME_24MS)
-codec.setAlcMaxGain(adafruit_wm8960.WM8960_ALC_MAX_GAIN_LEVEL_30DB)
-codec.setAlcMinGain(adafruit_wm8960.WM8960_ALC_MIN_GAIN_LEVEL_NEG_17_25DB)
-codec.setAlcHold(adafruit_wm8960.WM8960_ALC_HOLD_TIME_0MS)
+codec.enableAlc(adafruit_wm8960.ALC_MODE_STEREO)
+codec.setAlcTarget(adafruit_wm8960.ALC_TARGET_LEVEL_NEG_6DB)
+codec.setAlcDecay(adafruit_wm8960.ALC_DECAY_TIME_192MS)
+codec.setAlcAttack(adafruit_wm8960.ALC_ATTACK_TIME_24MS)
+codec.setAlcMaxGain(adafruit_wm8960.ALC_MAX_GAIN_LEVEL_30DB)
+codec.setAlcMinGain(adafruit_wm8960.ALC_MIN_GAIN_LEVEL_NEG_17_25DB)
+codec.setAlcHold(adafruit_wm8960.ALC_HOLD_TIME_0MS)
 
 print("Codec setup complete. Listen to left/right INPUT1 on Headphone outputs.")
 
