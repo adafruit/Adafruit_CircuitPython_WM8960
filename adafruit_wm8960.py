@@ -25,12 +25,20 @@ Implementation Notes
 # * Adafruit's Bus Device library: https://github.com/adafruit/Adafruit_CircuitPython_BusDevice
 """
 
-from busio import I2C
-from adafruit_bus_device.i2c_device import I2CDevice
-from micropython import const
-
 __version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_WM8960.git"
+
+from busio import I2C
+from adafruit_bus_device.i2c_device import I2CDevice
+from adafruit_simplemath import constrain, map_range
+import math
+from micropython import const
+
+try:
+    from typing import Optional, Type, Protocol
+    from circuitpython_typing.device_drivers import I2CDeviceDriver
+except ImportError:
+    pass
 
 # I2C address
 _DEFAULT_I2C_ADDR = const(0x1A)
@@ -65,8 +73,8 @@ _REG_ANTI_POP_1 = const(0x1C)
 _REG_ANTI_POP_2 = const(0x1D)
 _REG_ADCL_SIGNAL_PATH = const(0x20)
 _REG_ADCR_SIGNAL_PATH = const(0x21)
-_REG_LEFT_OUT_MIX_1 = const(0x22)
-_REG_RIGHT_OUT_MIX_2 = const(0x25)
+_REG_LEFT_OUT_MIX = const(0x22)
+_REG_RIGHT_OUT_MIX = const(0x25)
 _REG_MONO_OUT_MIX_1 = const(0x26)
 _REG_MONO_OUT_MIX_2 = const(0x27)
 _REG_LOUT2_VOLUME = const(0x28)
@@ -86,12 +94,6 @@ _REG_PLL_K_2 = const(0x36)
 _REG_PLL_K_3 = const(0x37)
 
 # PGA input selections
-PGAL_LINPUT2 = 0
-PGAL_LINPUT3 = 1
-PGAL_VMID = 2
-PGAR_RINPUT2 = 0
-PGAR_RINPUT3 = 1
-PGAR_VMID = 2
 PGA_INPUT2 = 0
 PGA_INPUT3 = 1
 PGA_VMID = 2
@@ -119,175 +121,53 @@ BOOST_MIXER_GAIN_0DB = 5
 BOOST_MIXER_GAIN_3DB = 6
 BOOST_MIXER_GAIN_6DB = 7
 
-'''
-Output Mixer gain options
-These are used to control the gain (aka volume) at the following settings:
-LI2LOVOL
-LB2LOVOL
-RI2LOVOL
-RB2LOVOL
-These are useful as analog bypass signal path options.
-'''
-OUTPUT_MIXER_GAIN_0DB = 0
-OUTPUT_MIXER_GAIN_NEG_3DB = 1
-OUTPUT_MIXER_GAIN_NEG_6DB = 2
-OUTPUT_MIXER_GAIN_NEG_9DB = 3
-OUTPUT_MIXER_GAIN_NEG_12DB = 4
-OUTPUT_MIXER_GAIN_NEG_15DB = 5
-OUTPUT_MIXER_GAIN_NEG_18DB = 6
-OUTPUT_MIXER_GAIN_NEG_21DB = 7
-
 # Mic Bias voltage options
 MIC_BIAS_VOLTAGE_0_9_AVDD = 0
 MIC_BIAS_VOLTAGE_0_65_AVDD = 1
 
 # SYSCLK divide
-SYSCLK_DIV_BY_1 = 0
-SYSCLK_DIV_BY_2 = 2
-CLKSEL_MCLK = 0
-CLKSEL_PLL = 1
-PLL_MODE_INTEGER = 0
-PLL_MODE_FRACTIONAL = 1
-PLLPRESCALE_DIV_1 = 0
-PLLPRESCALE_DIV_2 = 1
+_SYSCLK_DIV_BY_1 = const(0)
+_SYSCLK_DIV_BY_2 = const(2)
 
-# Class d clock divide
-DCLKDIV_16 = 7
+# Gain/Level mins, maxes, offsets and step-sizes
+_PGA_GAIN_MIN = -17.25
+_PGA_GAIN_MAX = 30.00
 
-# Word length settings (aka bits per sample)
-# Audio Data Word Length
-WL_16BIT = 0
-WL_20BIT = 1
-WL_24BIT = 2
-WL_32BIT = 3
+_ADC_VOLUME_MIN = -97.00
+_ADC_VOLUME_MAX = 30.00
 
-'''
-Additional Digital Audio Interface controls
-LRP (aka left-right-polarity)
-Right, left and I2S modes – LRCLK polarity
-0 = normal LRCLK polarity
-1 = inverted LRCLK polarity
-'''
-LR_POLARITY_NORMAL = 0
-LR_POLARITY_INVERT = 1
+_DAC_VOLUME_MIN = -127.00
+_DAC_VOLUME_MAX = 0.00
 
-'''
-ALRSWAP (aka ADC left/right swap)
-Left/Right ADC channel swap
-1 = Swap left and right ADC data in audio interface
-0 = Output left and right data as normal
-'''
-ALRSWAP_NORMAL = 0
-ALRSWAP_SWAP = 1
+_ALC_TARGET_MIN = -22.50
+_ALC_TARGET_MAX = -1.50
 
-# Gain mins, maxes, offsets and step-sizes for all the amps within the codec.
-PGA_GAIN_MIN = -17.25
-PGA_GAIN_MAX = 30.00
-PGA_GAIN_OFFSET = 17.25
-PGA_GAIN_STEPSIZE = 0.75
-HP_GAIN_MIN = -73.00
-HP_GAIN_MAX = 6.00
-HP_GAIN_OFFSET = 121.00
-HP_GAIN_STEPSIZE = 1.00
-SPEAKER_GAIN_MIN = -73.00
-SPEAKER_GAIN_MAX = 6.00
-SPEAKER_GAIN_OFFSET = 121.00
-SPEAKER_GAIN_STEPSIZE = 1.00
-ADC_GAIN_MIN = -97.00
-ADC_GAIN_MAX = 30.00
-ADC_GAIN_OFFSET = 97.50
-ADC_GAIN_STEPSIZE = 0.50
-DAC_GAIN_MIN = -97.00
-DAC_GAIN_MAX = 30.00
-DAC_GAIN_OFFSET = 97.50
-DAC_GAIN_STEPSIZE = 0.50
+_ALC_MAX_GAIN_MIN = -12.00
+_ALC_MAX_GAIN_MAX = 30.00
 
-# Automatic Level Control Modes
-ALC_MODE_OFF = 0
-ALC_MODE_RIGHT_ONLY = 1
-ALC_MODE_LEFT_ONLY = 2
-ALC_MODE_STEREO = 3
+_ALC_MIN_GAIN_MIN = -17.25
+_ALC_MIN_GAIN_MAX = 24.75
 
-# Automatic Level Control Target Level dB
-ALC_TARGET_LEVEL_NEG_22_5DB = 0
-ALC_TARGET_LEVEL_NEG_21DB = 1
-ALC_TARGET_LEVEL_NEG_19_5DB = 2
-ALC_TARGET_LEVEL_NEG_18DB = 3
-ALC_TARGET_LEVEL_NEG_16_5DB = 4
-ALC_TARGET_LEVEL_NEG_15DB = 5
-ALC_TARGET_LEVEL_NEG_13_5DB = 6
-ALC_TARGET_LEVEL_NEG_12DB = 7
-ALC_TARGET_LEVEL_NEG_10_5DB = 8
-ALC_TARGET_LEVEL_NEG_9DB = 9
-ALC_TARGET_LEVEL_NEG_7_5DB = 10
-ALC_TARGET_LEVEL_NEG_6DB = 11
-ALC_TARGET_LEVEL_NEG_4_5DB = 12
-ALC_TARGET_LEVEL_NEG_3DB = 13
-ALC_TARGET_LEVEL_NEG_1_5DB = 14
+_GATE_THRESHOLD_MIN = -76.50
+_GATE_THRESHOLD_MAX = -30.00
 
-# Automatic Level Control Max Gain Level dB
-ALC_MAX_GAIN_LEVEL_NEG_12DB = 0
-ALC_MAX_GAIN_LEVEL_NEG_6DB = 1
-ALC_MAX_GAIN_LEVEL_0DB = 2
-ALC_MAX_GAIN_LEVEL_6DB = 3
-ALC_MAX_GAIN_LEVEL_12DB = 4
-ALC_MAX_GAIN_LEVEL_18DB = 5
-ALC_MAX_GAIN_LEVEL_24DB = 6
-ALC_MAX_GAIN_LEVEL_30DB = 7
+_OUTPUT_VOLUME_MIN = -21.00
+_OUTPUT_VOLUME_MAX = 0.00
 
-# Automatic Level Control Min Gain Level dB
-ALC_MIN_GAIN_LEVEL_NEG_17_25DB = 0
-ALC_MIN_GAIN_LEVEL_NEG_11_25DB = 1
-ALC_MIN_GAIN_LEVEL_NEG_5_25DB = 2
-ALC_MIN_GAIN_LEVEL_0_75DB = 3
-ALC_MIN_GAIN_LEVEL_6_75DB = 4
-ALC_MIN_GAIN_LEVEL_12_75DB = 5
-ALC_MIN_GAIN_LEVEL_18_75DB = 6
-ALC_MIN_GAIN_LEVEL_24_75DB = 7
+_AMP_VOLUME_MIN = -73.00
+_AMP_VOLUME_MAX = 6.00
 
-# Automatic Level Control Hold Time (MS and SEC)
-ALC_HOLD_TIME_0MS = 0
-ALC_HOLD_TIME_3MS = 1
-ALC_HOLD_TIME_5MS = 2
-ALC_HOLD_TIME_11MS = 3
-ALC_HOLD_TIME_21MS = 4
-ALC_HOLD_TIME_43MS = 5
-ALC_HOLD_TIME_85MS = 6
-ALC_HOLD_TIME_170MS = 7
-ALC_HOLD_TIME_341MS = 8
-ALC_HOLD_TIME_682MS = 9
-ALC_HOLD_TIME_1365MS = 10
-ALC_HOLD_TIME_3SEC = 11
-ALC_HOLD_TIME_5SEC = 12
-ALC_HOLD_TIME_10SEC = 13
-ALC_HOLD_TIME_23SEC = 14
-ALC_HOLD_TIME_44SEC = 15
+# ALC Time mapping
+_ALC_ATTACK_MAX = const(10)
+_ALC_ATTACK_TIME_MIN = 0.006
+_ALC_ATTACK_TIME_MAX = 6.140
 
-# Automatic Level Control Decay Time (MS and SEC)
-ALC_DECAY_TIME_24MS = 0
-ALC_DECAY_TIME_48MS = 1
-ALC_DECAY_TIME_96MS = 2
-ALC_DECAY_TIME_192MS = 3
-ALC_DECAY_TIME_384MS = 4
-ALC_DECAY_TIME_768MS = 5
-ALC_DECAY_TIME_1536MS = 6
-ALC_DECAY_TIME_3SEC = 7
-ALC_DECAY_TIME_6SEC = 8
-ALC_DECAY_TIME_12SEC = 9
-ALC_DECAY_TIME_24SEC = 10
+_ALC_DECAY_MAX = const(10)
+_ALC_DECAY_TIME_MIN = 0.024
+_ALC_DECAY_TIME_MAX = 24.580
 
-# Automatic Level Control Attack Time (MS and SEC)
-ALC_ATTACK_TIME_6MS = 0
-ALC_ATTACK_TIME_12MS = 1
-ALC_ATTACK_TIME_24MS = 2
-ALC_ATTACK_TIME_482MS = 3
-ALC_ATTACK_TIME_964MS = 4
-ALC_ATTACK_TIME_1928MS = 5
-ALC_ATTACK_TIME_3846MS = 6
-ALC_ATTACK_TIME_768MS = 7
-ALC_ATTACK_TIME_1536MS = 8
-ALC_ATTACK_TIME_3SEC = 9
-ALC_ATTACK_TIME_6SEC = 10
+_ALC_HOLD_TIME_MIN = 0.00267
+_ALC_HOLD_TIME_MAX = 43.691
 
 # Speaker Boost Gains (DC and AC)
 SPEAKER_BOOST_GAIN_0DB = 0
@@ -299,1311 +179,1128 @@ SPEAKER_BOOST_GAIN_5_1DB = 5
 
 # VMIDSEL settings
 VMIDSEL_DISABLED = 0
-VMIDSEL_2X50KOHM = 1
-VMIDSEL_2X250KOHM = 2
-VMIDSEL_2X5KOHM = 3
+VMIDSEL_PLAYBACK = 1 # 2X50KOHM
+VMIDSEL_LOWPOWER = 2 # 2X250KOHM
+VMIDSEL_FASTSTART = 3 # 2X5KOHM
 
-'''
-VREF to Analogue Output Resistance
-(Disabled Outputs)
-0 = 500 VMID to output
-1 = 20k VMID to output
-'''
-VROI_500 = 0
-VROI_20K = 1
-
-'''
-Analogue Bias Optimisation
-00 = Reserved
-01 = Increased bias current optimized for
-AVDD=2.7V
-1X = Lowest bias current, optimized for
-AVDD=3.3V
-'''
-
-VSEL_INCREASED_BIAS_CURRENT = 1
-VSEL_LOWEST_BIAS_CURRENT = 3
-
-_REGISTER_DEFAULTS = [
-    0x0097, # R0 (0x00)
-    0x0097, # R1 (0x01)
-    0x0000, # R2 (0x02)
-    0x0000, # R3 (0x03)
-    0x0000, # R4 (0x04)
-    0x0008, # F5 (0x05)
-    0x0000, # R6 (0x06)
-    0x000A, # R7 (0x07)
-    0x01C0, # R8 (0x08)
-    0x0000, # R9 (0x09)
-    0x00FF, # R10 (0x0a)
-    0x00FF, # R11 (0x0b)
-    0x0000, # R12 (0x0C) RESERVED
-    0x0000, # R13 (0x0D) RESERVED
-    0x0000, # R14 (0x0E) RESERVED
-    0x0000, # R15 (0x0F) RESERVED
-    0x0000, # R16 (0x10)
-    0x007B, # R17 (0x11)
-    0x0100, # R18 (0x12)
-    0x0032, # R19 (0x13)
-    0x0000, # R20 (0x14)
-    0x00C3, # R21 (0x15)
-    0x00C3, # R22 (0x16)
-    0x01C0, # R23 (0x17)
-    0x0000, # R24 (0x18)
-    0x0000, # R25 (0x19)
-    0x0000, # R26 (0x1A)
-    0x0000, # R27 (0x1B)
-    0x0000, # R28 (0x1C)
-    0x0000, # R29 (0x1D)
-    0x0000, # R30 (0x1E) RESERVED
-    0x0000, # R31 (0x1F) RESERVED
-    0x0100, # R32 (0x20)
-    0x0100, # R33 (0x21)
-    0x0050, # R34 (0x22)
-    0x0000, # R35 (0x23) RESERVED
-    0x0000, # R36 (0x24) RESERVED
-    0x0050, # R37 (0x25)
-    0x0000, # R38 (0x26)
-    0x0000, # R39 (0x27)
-    0x0000, # R40 (0x28)
-    0x0000, # R41 (0x29)
-    0x0040, # R42 (0x2A)
-    0x0000, # R43 (0x2B)
-    0x0000, # R44 (0x2C)
-    0x0050, # R45 (0x2D)
-    0x0050, # R46 (0x2E)
-    0x0000, # R47 (0x2F)
-    0x0002, # R48 (0x30)
-    0x0037, # R49 (0x31)
-    0x0000, # R50 (0x32) RESERVED
-    0x0080, # R51 (0x33)
-    0x0008, # R52 (0x34)
-    0x0031, # R53 (0x35)
-    0x0026, # R54 (0x36)
-    0x00e9, # R55 (0x37)
+# Clock Divider Tables
+_BCLKDIV = [
+    1.0,
+    1.5,
+    2.0,
+    3.0,
+    4.0,
+    5.5,
+    6.0,
+    8.0,
+    11.0,
+    12.0,
+    16.0,
+    22.0,
+    24.0,
+    32.0
 ]
 
+_DCLKDIV = [
+    1.5,
+    2.0,
+    3.0,
+    4.0,
+    6.0,
+    8.0,
+    12.0,
+    16.0
+]
+
+_ADCDACDIV = [
+    1.0,
+    1.5,
+    2.0,
+    3.0,
+    4.0,
+    5.5,
+    6.0
+]
+
+class WMBit:
+
+    def __init__(
+        self,
+        register_address: int,
+        bit: int,
+        default: bool,
+    ) -> None:
+        self.register_address = register_address
+        self.bit = bit
+        self.bit_mask = 1 << (bit % 8) # the bitmask *within* the byte!
+        self.default = default
+        self.byte = 1 - (bit // 8) # the byte number within the buffer
+
+    def _set(self, obj:Optional[I2CDeviceDriver], value:bool) -> None:
+        if value:
+            obj._registers[self.register_address][self.byte] |= self.bit_mask
+        else:
+            obj._registers[self.register_address][self.byte] &= ~self.bit_mask
+    
+    def reset(self, obj: Optional[I2CDeviceDriver]) -> None:
+        self._set(obj, self.default)
+
+    def __get__(
+        self,
+        obj: Optional[I2CDeviceDriver],
+        objtype: Optional[Type[I2CDeviceDriver]] = None,
+    ) -> bool:
+        return bool(obj._registers[self.register_address][self.byte] & self.bit_mask)
+
+    def __set__(self, obj: Optional[I2CDeviceDriver], value: bool) -> None:
+        self._set(obj, value)
+        with obj.i2c_device as i2c:
+            i2c.write(obj._registers[self.register_address])
+
+class WMBits:
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        num_bits: int,
+        register_address: int,
+        lowest_bit: int,
+        default: int,
+    ) -> None:
+        self.register_width = 1
+        self.register_address = register_address
+        self.bit_mask = ((1 << num_bits) - 1) << lowest_bit
+        self.lowest_bit = lowest_bit
+        self.default = default << self.lowest_bit
+
+    def _set(self, obj:Optional[I2CDeviceDriver], value:int) -> None:
+        value <<= self.lowest_bit  # shift the value over to the right spot
+        reg = 0
+        for i in range(2):
+            reg = (reg << 8) | obj._registers[self.register_address][i]
+        reg &= ~self.bit_mask  # mask off the bits we're about to change
+        reg |= value  # then or in our new value
+        for i in range(1, -1, -1):
+            obj._registers[self.register_address][i] = reg & 0xFF
+            reg >>= 8
+    
+    # Must call first before using object
+    def reset(self, obj:Optional[I2CDeviceDriver]) -> None:
+        self._set(obj, self.default)
+
+    def __get__(
+        self,
+        obj: Optional[I2CDeviceDriver],
+        objtype: Optional[Type[I2CDeviceDriver]] = None,
+    ) -> int:
+        # read the number of bytes into a single variable
+        reg = 0
+        for i in range(2):
+            reg = (reg << 8) | obj._registers[self.register_address][i]
+        reg = (reg & self.bit_mask) >> self.lowest_bit
+        return reg
+
+    def __set__(self, obj: Optional[I2CDeviceDriver], value: int) -> None:
+        self._set(obj, value)
+        with obj.i2c_device as i2c:
+            i2c.write(obj._registers[self.register_address])
+
 class WM8960:
-    def __init__(self, i2c_bus:I2C, address:int = _DEFAULT_I2C_ADDR):
-        self.i2c_device = I2CDevice(i2c_bus, address)
-        self._buf = bytearray(2)
 
-        '''
-        The WM8960 does not support I2C reads
-        This means we must keep a local copy of all the register values
-        We will instantiate with default values by copying from _REGISTER_DEFAULTS during reset()
-        As we write to the device, we will also make sure to update our local copy as well, stored here in this array.
-        Each register is 9-bits
-        They are in order from R0-R55, and we even keep blank spots for the "reserved" registers. This way we can use the register address macro defines above to easiy access each local copy of each register.
-        Example: self._registerLocalCopy[_REG_LEFT_INPUT_VOLUME]
-        '''
-        self._registerLocalCopy = [0x0000 for i in range(len(_REGISTER_DEFAULTS))]
-        self.reset()
+    # Power
 
-        # General setup
-        self.enableVREF()
-        self.enableVMID()
+    vref = WMBit(_REG_PWR_MGMT_1, 6, False)
 
+    analogInputLeftEnabled = WMBit(_REG_PWR_MGMT_1, 5, False)
+    analogInputRightEnabled = WMBit(_REG_PWR_MGMT_1, 4, False)
+
+    @property
+    def analogInputEnabled(self) -> bool:
+        return self.analogInputLeftEnabled and self.analogInputRightEnabled
+    @analogInputEnabled.setter
+    def analogInputEnabled(self, value:bool) -> None:
+        self.analogInputLeftEnabled = self.analogInputRightEnabled = value
+
+    # PGA
     
-    def _getDivBit(self, src:int, dest:int) -> int:
-        div = (src * 2) // dest
-        if div < 2 or div > 12: return 0
-        if div == 2: div = 0
-        elif div == 3: div = 2
-        elif div == 10: return 0
-        elif div == 11: div = 10
-        if div % 2 == 1: return 0
-        return div // 2
-    
-    def configureI2S(self, sample_rate:int, word_length:int = WL_16BIT, master:bool = False) -> bool:
-        if not self.setSampleRate(sample_rate): return False
-        if not self.setWL(word_length): return False
-        if master:
-            if not self.enableMasterMode(): return False
-            if not self.setALRCGPIO(): return False # Note, should not be changed while ADC is enabled.
+    ## PWR_MGMT
+
+    pgaLeftEnabled = WMBit(_REG_PWR_MGMT_3, 5, False)
+    pgaRightEnabled = WMBit(_REG_PWR_MGMT_3, 4, False)
+
+    @property
+    def pgaEnabled(self) -> bool:
+        return self.pgaLeftEnabled and self.pgaRightEnabled
+    @pgaEnabled.setter
+    def pgaEnabled(self, value:bool) -> None:
+        self.pgaLeftEnabled = self.pgaRightEnabled = value
+
+    ## SIGNAL_PATH
+
+    _pgaInput1Left = WMBit(_REG_ADCL_SIGNAL_PATH, 8, True)
+    _pgaInput2Left = WMBit(_REG_ADCL_SIGNAL_PATH, 6, False)
+    _pgaInput3Left = WMBit(_REG_ADCL_SIGNAL_PATH, 7, False)
+
+    _pgaInput1Right = WMBit(_REG_ADCR_SIGNAL_PATH, 8, True)
+    _pgaInput2Right = WMBit(_REG_ADCR_SIGNAL_PATH, 6, False)
+    _pgaInput3Right = WMBit(_REG_ADCR_SIGNAL_PATH, 7, False)
+
+    @property
+    def pgaNonInvSignalLeft(self) -> int:
+        if self._pgaInput2Left:
+            return PGA_INPUT2
+        elif self._pgaInput3Left:
+            return PGA_INPUT3
         else:
-            if not self.enablePeripheralMode(): return False
-        return True
+            return PGA_VMID
+    @pgaNonInvSignalLeft.setter
+    def pgaNonInvSignalLeft(self, signal:int) -> None:
+        self._pgaInput2Left = signal == PGA_INPUT2
+        self._pgaInput3Left = signal == PGA_INPUT3
     
-    def configureDAC(self, loopback:bool = False) -> bool:
-        # Connect from DAC outputs to output mixer
-        if not self.enableD2O(): return False
-        # Enable output mixers
-        if not self.enableOMIX(): return False
-        # Enable DACs
-        if not self.enableDac(): return False
-        # Default is "soft mute" on, so we must disable mute to make channels active
-        if not self.disableDacMute(): return False
-
-        # Loopback sends ADC data directly into DAC
-        if loopback:
-            if not self.enableLoopBack(): return False
+    @property
+    def pgaNonInvSignalRight(self) -> int:
+        if self._pgaInput2Right:
+            return PGA_INPUT2
+        elif self._pgaInput3Right:
+            return PGA_INPUT3
         else:
-            if not self.disableLoopBack(): return False
+            return PGA_VMID
+    @pgaNonInvSignalRight.setter
+    def pgaNonInvSignalRight(self, signal:int) -> None:
+        self._pgaInput2Right = signal == PGA_INPUT2
+        self._pgaInput3Right = signal == PGA_INPUT3
 
-        return True
+    @property
+    def pgaNonInvSignal(self) -> int:
+        # NOTE: Not checking right signal
+        return self.pgaNonInvSignalLeft
+    @pgaNonInvSignal.setter
+    def pgaNonInvSignal(self, signal:int) -> None:
+        self.pgaNonInvSignalLeft = self.pgaNonInvSignalRight = signal
+
+    ## Boost
+
+    pgaLeftBoostEnabled = WMBit(_REG_ADCL_SIGNAL_PATH, 3, False)
+    pgaRightBoostEnabled = WMBit(_REG_ADCR_SIGNAL_PATH, 3, False)
+
+    @property
+    def pgaBoostEnabled(self) -> None:
+        return self.pgaLeftBoostEnabled and self.pgaRightBoostEnabled
+    @pgaBoostEnabled.setter
+    def pgaBoostEnabled(self, value:int) -> None:
+        self.pgaLeftBoostEnabled = self.pgaRightBoostEnabled = value
+
+    pgaBoostGainLeft = WMBits(2, _REG_ADCL_SIGNAL_PATH, 4, 0)
+    pgaBoostGainRight = WMBits(2, _REG_ADCR_SIGNAL_PATH, 4, 0)
+
+    @property
+    def pgaBoostGain(self) -> None:
+        return max(self.pgaBoostGainLeft, self.pgaBoostGainRight)
+    @pgaBoostGain.setter
+    def pgaBoostGain(self, value:int) -> None:
+        self.pgaGainLeft = self.pgaGainRight = value
+
+    ## Volume
+
+    _pgaLeftVolume = WMBits(6, _REG_LEFT_INPUT_VOLUME, 0, 0b010111)
+    _pgaLeftVolumeSet = WMBit(_REG_LEFT_INPUT_VOLUME, 8, False)
+
+    _pgaRightVolume = WMBits(6, _REG_RIGHT_INPUT_VOLUME, 0, 0b010111)
+    _pgaRightVolumeSet = WMBit(_REG_RIGHT_INPUT_VOLUME, 8, False)
+
+    @property
+    def pgaLeftVolume(self) -> int:
+        return self._pgaLeftVolume
+    @pgaLeftVolume.setter
+    def pgaLeftVolume(self, value:int) -> None:
+        self._pgaLeftVolume = value
+        self._pgaLeftVolumeSet = True
+
+    @property
+    def pgaLeftVolumeDb(self) -> float:
+        return map_range(self.pgaLeftVolume, 0, 63, _PGA_GAIN_MIN, _PGA_GAIN_MAX)
+    @pgaLeftVolumeDb.setter
+    def pgaLeftVolumeDb(self, value:float) -> None:
+        self.pgaLeftVolume = round(map_range(value, _PGA_GAIN_MIN, _PGA_GAIN_MAX, 0, 63))
     
-    def configureHeadphones(self, dB:float = 0.0, capless:bool = True) -> bool:
-        # Enable headphone output
-        if not self.enableHeadphones(): return False
-        # Provides VMID as buffer for headphone ground on OUT3
-        if capless:
-            if not self.enableOUT3MIX(): return False
-        # Adjust headphone volume
-        if not self.setHeadphoneVolumeDB(dB): return False
-        return True
+    @property
+    def pgaRightVolume(self) -> int:
+        return self._pgaRightVolume
+    @pgaRightVolume.setter
+    def pgaRightVolume(self, value:int) -> None:
+        self._pgaRightVolume = value
+        self._pgaRightVolumeSet = True
+
+    @property
+    def pgaRightVolumeDb(self) -> float:
+        return map_range(self.pgaRightVolume, 0, 63, _PGA_GAIN_MIN, _PGA_GAIN_MAX)
+    @pgaRightVolumeDb.setter
+    def pgaRightVolumeDb(self, value:float) -> None:
+        self.pgaRightVolume = round(map_range(value, _PGA_GAIN_MIN, _PGA_GAIN_MAX, 0, 63))
     
-    def configureSpeakers(self, dB:float = 0.0) -> bool:
-        # Enable speaker output
-        if not self.enableSpeakers(): return False
-        # Adjust speaker volume
-        if not self.setSpeakerVolumeDB(dB): return False
-        return True
+    @property
+    def pgaVolume(self) -> int:
+        return self.pgaLeftVolume
+    @pgaVolume.setter
+    def pgaVolume(self, value:int) -> None:
+        self.pgaLeftVolume = self.pgaRightVolume = value
 
-    def setSampleRate(self, sample_rate:int) -> bool:
-        # MCLK = 24 MHz
-        if not self.enablePLL(): return False # Needed for class-d amp clock
-        self.setSMD(PLL_MODE_FRACTIONAL)
-        self.setCLKSEL(CLKSEL_PLL)
+    @property
+    def pgaVolumeDb(self) -> float:
+        return self.pgaLeftVolumeDb
+    @pgaVolumeDb.setter
+    def pgaVolumeDb(self, value:float) -> None:
+        self.pgaVolume = round(map_range(value, _PGA_GAIN_MIN, _PGA_GAIN_MAX, 0, 63))
 
-        self.setPLLPRESCALE(PLLPRESCALE_DIV_2)
-        self.setSYSCLKDIV(SYSCLK_DIV_BY_2)
-        self.setBCLKDIV(4)
+    ## Zero Cross
 
-        self.setDCLKDIV(DCLKDIV_16)
+    pgaLeftZeroCross = WMBit(_REG_LEFT_INPUT_VOLUME, 6, False)
+    pgaRightZeroCross = WMBit(_REG_RIGHT_INPUT_VOLUME, 6, False)
 
-        if sample_rate in [8000, 12000, 16000, 24000, 32000, 48000]:
-            # SYSCLK = 12.288 MHz
-            # DCLK = 768.0kHz
-            self.setPLLN(8)
-            self.setPLLK(0x3126E8)
+    @property
+    def pgaZeroCross(self) -> bool:
+        return self.pgaLeftZeroCross and self.pgaRightZeroCross
+    @pgaZeroCross.setter
+    def pgaZeroCross(self, value:bool) -> None:
+        self.pgaLeftZeroCross = self.pgaRightZeroCross = value
 
-            div = self._getDivBit(48000, sample_rate)
-            self.setADCDIV(div)
-            self.setDACDIV(div)
-        elif sample_rate in [11025, 22050, 44100]:
-            # SYSCLK = 11.2896 MHz
-            # DCLK = 705.6kHz
-            self.setPLLN(7)
-            self.setPLLK(0x86C226)
+    ## Mute
 
-            div = self._getDivBit(44100, sample_rate)
-            self.setADCDIV(div)
-            self.setDACDIV(div)
+    _pgaLeftMute = WMBit(_REG_LEFT_INPUT_VOLUME, 7, True)
+    _pgaRightMute = WMBit(_REG_RIGHT_INPUT_VOLUME, 7, True)
+
+    @property
+    def pgaLeftMute(self) -> bool:
+        return self._pgaLeftMute
+    @pgaLeftMute.setter
+    def pgaLeftMute(self, value:bool) -> None:
+        self._pgaLeftMute = value
+        self._pgaLeftVolumeSet = True
+
+    @property
+    def pgaRightMute(self) -> bool:
+        return self._pgaRightMute
+    @pgaRightMute.setter
+    def pgaRightMute(self, value:bool) -> None:
+        self._pgaRightMute = value
+        self._pgaRightVolumeSet = True
+
+    @property
+    def pgaMute(self) -> bool:
+        return self._pgaLeftMute and self._pgaRightMute
+    @pgaMute.setter
+    def pgaMute(self, value:bool) -> None:
+        self._pgaLeftMute = self._pgaRightMute = value
+
+    # Boost Mixer
+
+    input2LeftBoost = WMBits(3, _REG_INPUT_BOOST_MIXER_1, 1, 0)
+    input2RightBoost = WMBits(3, _REG_INPUT_BOOST_MIXER_2, 1, 0)
+
+    @property
+    def input2Boost(self) -> int:
+        return self.input2LeftBoost
+    @input2Boost.setter
+    def input2Boost(self, value:int) -> None:
+        self.input2LeftBoost = self.input2RightBoost = value
+
+    input3LeftBoost = WMBits(3, _REG_INPUT_BOOST_MIXER_1, 4, 0)
+    input3RightBoost = WMBits(3, _REG_INPUT_BOOST_MIXER_2, 4, 0)
+
+    # Mic Bias
+
+    micBias = WMBit(_REG_PWR_MGMT_1, 1, False)
+    micBiasVoltage = WMBit(_REG_ADDITIONAL_CONTROL_4, 0, False)
+
+    @property
+    def input3Boost(self) -> int:
+        return self.input3LeftBoost
+    @input3Boost.setter
+    def input3Boost(self, value:int) -> None:
+        self.input3LeftBoost = self.input3RightBoost = value
+
+    # ADC
+
+    adcLeftEnabled = WMBit(_REG_PWR_MGMT_1, 3, False)
+    adcRightEnabled = WMBit(_REG_PWR_MGMT_1, 2, False)
+
+    @property
+    def adcEnabled(self) -> bool:
+        return self.adcLeftEnabled and self.adcRightEnabled
+    @adcEnabled.setter
+    def adcEnabled(self, value:bool) -> None:
+        self.adcLeftEnabled = self.adcRightEnabled = value
+    
+    ## Volume
+
+    _adcLeftVolume = WMBits(8, _REG_LEFT_ADC_VOLUME, 0, 0b11000011)
+    _adcLeftVolumeSet = WMBit(_REG_LEFT_ADC_VOLUME, 8, False)
+
+    @property
+    def adcLeftVolume(self) -> int:
+        return self._adcLeftVolume
+    @adcLeftVolume.setter
+    def adcLeftVolume(self, value:int) -> None:
+        self._adcLeftVolume = value
+        self._adcLeftVolumeSet = True
+
+    @property
+    def adcLeftVolumeDb(self) -> float:
+        return map_range(max(self.adcLeftVolume, 1), 1, 255, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX)
+    @adcLeftVolumeDb.setter
+    def adcLeftVolumeDb(self, value:float) -> None:
+        self.adcLeftVolume = round(map_range(value, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX, 0, 254) + 1.0)
+
+    _adcRightVolume = WMBits(8, _REG_RIGHT_ADC_VOLUME, 0, 0b11000011)
+    _adcRightVolumeSet = WMBit(_REG_RIGHT_ADC_VOLUME, 8, False)
+
+    @property
+    def adcRightVolume(self) -> int:
+        return self._adcRightVolume
+    @adcRightVolume.setter
+    def adcRightVolume(self, value:int) -> None:
+        self._adcRightVolume = value
+        self._adcRightVolumeSet = True
+
+    @property
+    def adcRightVolumeDb(self) -> float:
+        return map_range(max(self.adcRightVolume, 1), 1, 255, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX)
+    @adcRightVolumeDb.setter
+    def adcRightVolumeDb(self, value:float) -> None:
+        self.adcRightVolume = round(map_range(value, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX, 0, 254) + 1.0)
+
+    @property
+    def adcVolume(self) -> int:
+        return self.adcLeftVolume
+    @adcVolume.setter
+    def adcVolume(self, value:float) -> None:
+        self.adcLeftVolume = self.adcRightVolume = value
+    
+    @property
+    def adcVolumeDb(self) -> int:
+        return self.adcLeftVolumeDb
+    @adcVolume.setter
+    def adcVolume(self, value:float) -> None:
+        self.adcLeftVolume = self.adcRightVolume = round(map_range(value, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX, 0, 254) + 1.0)
+
+    # ALC
+
+    alcLeftEnabled = WMBit(_REG_ALC1, 7, False)
+    alcRightEnabled = WMBit(_REG_ALC1, 8, False)
+
+    @property
+    def alcEnabled(self) -> bool:
+        return self.alcLeftEnabled and self.alcRightEnabled
+    @alcEnabled.setter
+    def alcEnabled(self, value:bool) -> None:
+        self.alcLeftEnabled = self.alcRightEnabled = value
+
+    alcTarget = WMBits(4, _REG_ALC1, 0, 0b1011)
+
+    @property
+    def alcTargetDb(self) -> float:
+        return map_range(self.alcTarget, 0, 15, _ALC_TARGET_MIN, _ALC_TARGET_MAX)
+    @alcTargetDb.setter
+    def alcTargetDb(self, value:float) -> None:
+        self.alcTarget = round(map_range(value, _ALC_TARGET_MIN, _ALC_TARGET_MAX, 0, 15))
+
+    alcMaxGain = WMBits(3, _REG_ALC1, 4, 0)
+
+    @property
+    def alcMaxGainDb(self) -> float:
+        return map_range(self.alcMaxGain, 0, 7, _ALC_MAX_GAIN_MIN, _ALC_MAX_GAIN_MAX)
+    @alcMaxGainDb.setter
+    def alcMaxGainDb(self, value:float) -> None:
+        self.alcMaxGain = round(map_range(value, _ALC_MAX_GAIN_MIN, _ALC_MAX_GAIN_MAX, 0, 7))
+
+    alcMinGain = WMBits(3, _REG_ALC2, 4, 0)
+
+    @property
+    def alcMinGainDb(self) -> float:
+        return map_range(self.alcMinGain, 0, 7, _ALC_MIN_GAIN_MIN, _ALC_MIN_GAIN_MAX)
+    @alcMinGainDb.setter
+    def alcMinGainDb(self, value:float) -> None:
+        self.alcMinGain = round(map_range(value, _ALC_MIN_GAIN_MIN, _ALC_MIN_GAIN_MAX, 0, 7))
+
+    _alcAttack = WMBits(4, _REG_ALC3, 0, 0b0011)
+
+    @property
+    def alcAttack(self) -> int:
+        return self._alcAttack
+    @alcAttack.setter
+    def alcAttack(self, value:int) -> None:
+        self._alcAttack = min(value, _ALC_ATTACK_MAX)
+    
+    @property
+    def alcAttackTime(self) -> float:
+        return _ALC_ATTACK_TIME_MIN * pow(2, self.alcAttack)
+    @alcAttackTime.setter
+    def alcAttackTime(self, value:float) -> None:
+        self.alcAttack = round(math.log2((constrain(value, _ALC_ATTACK_TIME_MIN, _ALC_ATTACK_TIME_MAX) - _ALC_ATTACK_TIME_MIN) / _ALC_ATTACK_TIME_MIN))
+
+    _alcDecay = WMBits(4, _REG_ALC3, 4, 0b0011)
+
+    @property
+    def alcDecay(self) -> int:
+        return self._alcDecay
+    @alcDecay.setter
+    def alcDecay(self, value:int) -> None:
+        self._alcDecay = min(value, _ALC_DECAY_MAX)
+
+    @property
+    def alcDecayTime(self) -> float:
+        return _ALC_DECAY_TIME_MIN * pow(2, self.alcDecay)
+    @alcDecayTime.setter
+    def alcDecayTime(self, value:float) -> None:
+        self.alcDecay = round(math.log2((constrain(value, _ALC_DECAY_TIME_MIN, _ALC_DECAY_TIME_MAX) - _ALC_DECAY_TIME_MIN) / _ALC_DECAY_TIME_MIN))
+
+    alcHold = WMBits(4, _REG_ALC2, 0, 0)
+
+    @property
+    def alcHoldTime(self) -> float:
+        value = self.alcHold
+        if value == 0: return 0.0
+        return _ALC_HOLD_TIME_MIN * pow(2, self.alcHold - 1)
+    @alcHoldTime.setter
+    def alcHoldTime(self, value:float) -> None:
+        if value <= 0.0:
+            self.alcHold = 0
         else:
-            raise Exception("Invalid sample rate")
-        
-        return True
+            self.alcHold = round(math.log2((constrain(value, _ALC_HOLD_TIME_MIN, _ALC_HOLD_TIME_MAX) - _ALC_HOLD_TIME_MIN) / _ALC_HOLD_TIME_MIN) + 1.0)
 
-    '''
-    Necessary for all other functions of the CODEC
-    VREF is a single bit we can flip in Register 25 (19h), _REG_PWR_MGMT_1
-    VREF is bit 6, 0 = power down, 1 = power up
-    Returns 1 if successful, 0 if something failed (I2C error)
-    '''
-    def enableVREF(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_1, 6, 1)
-
-    '''
-    Use this to save power
-    VREF is a single bit we can flip in Register 25 (19h), _REG_PWR_MGMT_1
-    VREF is bit 6, 0 = power down, 1 = power up
-    Returns 1 if successful, 0 if something failed (I2C error)
-    '''
-    def disableVREF(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_1, 6, 0)
-
-    # Resets all registers to their default state
-    def reset(self) -> bool:
-        # Doesn't matter which bit we flip, writing anything will cause the reset
-        if not self._writeRegisterBit(_REG_RESET, 7, 1): return False
-        # Update our local copy of the registers to reflect the reset
-        for i in range(len(_REGISTER_DEFAULTS)):
-            self._registerLocalCopy[i] = _REGISTER_DEFAULTS[i]
-        return True
-
-    def enableAINL(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_1, 5, 1)
-    def disableAINL(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_1, 5, 0)
-
-    def enableAINR(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_1, 4, 1)
-    def disableAINR(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_1, 4, 0)
-
-    def enableAIN(self) -> bool:
-        return self.enableAINL() and self.enableAINR()
-    def disableAIN(self) -> bool:
-        return self.disableAINL() and self.disableAINR()
-
-    def enableLMIC(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_3, 5, 1)
-    def disableLMIC(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_3, 5, 0)
-
-    def enableRMIC(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_3, 4, 1)
-    def disableRMIC(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_3, 4, 0)
-
-    def enableMIC(self) -> bool:
-        return self.enableLMIC() and self.enableRMIC()
-    def disableMIC(self) -> bool:
-        return self.disableLMIC() and self.disableRMIC()
-
-    def enableLMICBOOST(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_3, 5, 1)
-    def disableLMICBOOST(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_3, 5, 0)
-
-    def enableRMICBOOST(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_3, 4, 1)
-    def disableRMICBOOST(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_3, 4, 0)
-
-    def enableMICBOOST(self) -> bool:
-        return self.enableLMICBOOST() and self.enableRMICBOOST()
-    def disableMICBOOST(self) -> bool:
-        return self.disableLMICBOOST() and self.disableRMICBOOST()
-
-    # PGA input signal select
-    # Each PGA (left and right) has a switch on its non-inverting input.
-    # On PGA_LEFT:
-    # You can select between VMID, LINPUT2 or LINPUT3
-    # Note, the inverting input of PGA_LEFT is perminantly connected to
-    # LINPUT1
-    # On PGA_RIGHT:
-    # You can select between VMIN, RINPUT2 or RINPUT3
-    # Note, the inverting input of PGA_RIGHT is perminantly connected to
-    # RINPUT1
-
-    # 3 options: PGAL_LINPUT2, PGAL_LINPUT3, PGAL_VMID
-    def pgaLeftNonInvSignalSelect(self, signal:int) -> bool:
-        '''
-        Clear LMP2 and LMP3
-        Necessary because the previous setting could have either set,
-        And we don't want to confuse the codec.
-        Only 1 input can be selected.
-        '''
-
-        # LMP3
-        if not self._writeRegisterBit(_REG_ADCL_SIGNAL_PATH, 7, 0): return False
-
-        # LMP2
-        if not self._writeRegisterBit(_REG_ADCL_SIGNAL_PATH, 6, 0): return False
-
-        if signal == PGAL_LINPUT2:
-            # LMP2
-            return self._writeRegisterBit(_REG_ADCL_SIGNAL_PATH, 6, 1)
-        elif signal == PGAL_LINPUT3:
-            # LMP3
-            return self._writeRegisterBit(_REG_ADCL_SIGNAL_PATH, 7, 1)
-        elif signal == PGAL_VMID:
-            # Don't set any bits. When both LMP2 and LMP3 are cleared, then the signal is set to VMID
-            return True
-        else:
-            raise Exception("Invalid PGA signal select")
-
-    # 3 options: PGAR_RINPUT2, PGAR_RINPUT3, PGAR_VMID
-    def pgaRightNonInvSignalSelect(self, signal:int) -> bool:
-        '''
-        Clear RMP2 and RMP3
-        Necessary because the previous setting could have either set,
-        And we don't want to confuse the codec.
-        Only 1 input can be selected.
-        '''
-
-        # RMP3
-        if not self._writeRegisterBit(_REG_ADCR_SIGNAL_PATH, 7, 0): return False
-
-        # RMP2
-        if not self._writeRegisterBit(_REG_ADCR_SIGNAL_PATH, 6, 0): return False
-
-        if signal == PGAR_RINPUT2:
-            # RMP2
-            return self._writeRegisterBit(_REG_ADCR_SIGNAL_PATH, 6, 1)
-        elif signal == PGAR_RINPUT3:
-            # RMP3
-            return self._writeRegisterBit(_REG_ADCR_SIGNAL_PATH, 7, 1)
-        elif signal == PGAR_VMID:
-            # Don't set any bits. When both RMP2 and RMP3 are cleared, then the signal is set to VMID
-            return True
-        else:
-            raise Exception("Invalid PGA signal select")
-
-    # 3 options: PGA_INPUT2, PGA_INPUT3, PGA_VMID
-    def pgaNonInvSignalSelect(self, signal:int) -> bool:
-        return self.pgaLeftNonInvSignalSelect(signal) and self.pgaRightNonInvSignalSelect(signal)
-
-    # Connections from each INPUT1 to the inverting input of its PGA
-
-    # Connect LINPUT1 to inverting input of Left Input PGA
-    def connectLMN1(self) -> bool:
-        return self._writeRegisterBit(_REG_ADCL_SIGNAL_PATH, 8, 1)
-
-    # Disconnect LINPUT1 from inverting input of Left Input PGA
-    def disconnectLMN1(self) -> bool:
-        return self._writeRegisterBit(_REG_ADCL_SIGNAL_PATH, 8, 0)
-
-    # Connect RINPUT1 to inverting input of Right Input PGA
-    def connectRMN1(self) -> bool:
-        return self._writeRegisterBit(_REG_ADCR_SIGNAL_PATH, 8, 1)
-
-    # Disconnect RINPUT1 from inverting input of Right Input PGA
-    def disconnectRMN1(self) -> bool:
-        return self._writeRegisterBit(_REG_ADCR_SIGNAL_PATH, 8, 0)
-
-    def connectMN1(self) -> bool:
-        return self.connectLMN1() and self.connectRMN1()
-    def disconnectMN1(self) -> bool:
-        return self.disconnectLMN1() and self.disconnectRMN1()
-    
-    # Connection from output of PGAs to downstream "boost mixers"
-
-    # Connect Left Input PGA to Left Input Boost mixer
-    def connectLMIC2B(self) -> bool:
-        return self._writeRegisterBit(_REG_ADCL_SIGNAL_PATH, 3, 1)
-
-    # Disconnect Left Input PGA to Left Input Boost mixer
-    def disconnectLMIC2B(self) -> bool:
-        return self._writeRegisterBit(_REG_ADCL_SIGNAL_PATH, 3, 0)
-
-    # Connect Right Input PGA to Right Input Boost mixer
-    def connectRMIC2B(self) -> bool:
-        return self._writeRegisterBit(_REG_ADCR_SIGNAL_PATH, 3, 1)
-
-    # Disconnect Right Input PGA to Right Input Boost mixer
-    def disconnectRMIC2B(self) -> bool:
-        return self._writeRegisterBit(_REG_ADCR_SIGNAL_PATH, 3, 0)
-
-    def connectMIC2B(self) -> bool:
-        return self.connectLMIC2B() and self.connectRMIC2B()
-    def disconnectMIC2B(self) -> bool:
-        return self.disconnectLMIC2B() and self.disconnectRMIC2B()
-
-    # 0-63, (0 = -17.25dB) <<-- 0.75dB steps -->> (63 = +30dB)
-    def setLINVOL(self, volume:int) -> bool:
-        # Limit incoming values max
-        if volume > 63:
-            volume = 63
-        if not self._writeRegisterMultiBits(_REG_LEFT_INPUT_VOLUME, 5, 0, volume): return False
-        return self.pgaLeftIPVUSet()
-
-    '''
-    Sets the volume of the PGA input buffer amp to a specified dB value 
-    passed in as a float argument.
-    Valid dB settings are -17.25 up to +30.00
-    -17.25 = -17.25dB (MIN)
-    ... 0.75dB steps ...
-    30.00 = +30.00dB  (MAX)
-    '''
-    def setLINVOLDB(self, dB:float) -> bool:
-        # Create an unsigned integer volume setting variable we can send to setLINVOL()
-        volume = self.convertDBtoSetting(dB, PGA_GAIN_OFFSET, PGA_GAIN_STEPSIZE, PGA_GAIN_MIN, PGA_GAIN_MAX)
-        return self.setLINVOL(volume)
-
-    # 0-63, (0 = -17.25dB) <<-- 0.75dB steps -->> (63 = +30dB)
-    def setRINVOL(self, volume:int) -> bool:
-        # Limit incoming values max
-        if volume > 63:
-            volume = 63
-        if not self._writeRegisterMultiBits(_REG_RIGHT_INPUT_VOLUME, 5, 0, volume): return False
-        return self.pgaRightIPVUSet()
-
-    '''
-    Sets the volume of the PGA input buffer amp to a specified dB value 
-    passed in as a float argument.
-    Valid dB settings are -17.25 up to +30.00
-    -17.25 = -17.25dB (MIN)
-    ... 0.75dB steps ...
-    30.00 = +30.00dB  (MAX)
-    '''
-    def setRINVOLDB(self, dB:float) -> bool:
-        # Create an unsigned integer volume setting variable we can send to setLINVOL()
-        volume = self.convertDBtoSetting(dB, PGA_GAIN_OFFSET, PGA_GAIN_STEPSIZE, PGA_GAIN_MIN, PGA_GAIN_MAX)
-        return self.setRINVOL(volume)
-
-    def setINVOL(self, volume:int) -> bool:
-        return self.setLINVOL(volume) and self.setRINVOL(volume)
-
-    def setINVOLDB(self, dB:float) -> bool:
-        # Create an unsigned integer volume setting variable we can send to setLINVOL()
-        volume = self.convertDBtoSetting(dB, PGA_GAIN_OFFSET, PGA_GAIN_STEPSIZE, PGA_GAIN_MIN, PGA_GAIN_MAX)
-        return self.setLINVOL(volume) and self.setRINVOL(volume)
-
-    # Zero Cross prevents zipper sounds on volume changes
-    # Sets both left and right PGAs
-    def enablePgaZeroCross(self) -> bool:
-        return self._writeRegisterBit(_REG_LEFT_INPUT_VOLUME, 6, 1) and self._writeRegisterBit(_REG_RIGHT_INPUT_VOLUME, 6, 1)
-    def disablePgaZeroCross(self) -> bool:
-        return self._writeRegisterBit(_REG_LEFT_INPUT_VOLUME, 6, 0) and self._writeRegisterBit(_REG_RIGHT_INPUT_VOLUME, 6, 0)
-
-    def enableLINMUTE(self) -> bool:
-        return self._writeRegisterBit(_REG_LEFT_INPUT_VOLUME, 7, 1)
-    def disableLINMUTE(self) -> bool:
-        return self._writeRegisterBit(_REG_LEFT_INPUT_VOLUME, 7, 0) and self._writeRegisterBit(_REG_LEFT_INPUT_VOLUME, 8, 1)
-
-    def enableRINMUTE(self) -> bool:
-        return self._writeRegisterBit(_REG_RIGHT_INPUT_VOLUME, 7, 1)
-    def disableRINMUTE(self) -> bool:
-        return self._writeRegisterBit(_REG_RIGHT_INPUT_VOLUME, 7, 0) and self._writeRegisterBit(_REG_RIGHT_INPUT_VOLUME, 8, 1)
-
-    def enableINMUTE(self) -> bool:
-        return self.enableLINMUTE() and self.enableRINMUTE()
-    def disableINMUTE(self) -> bool:
-        return self.disableLINMUTE() and self.disableRINMUTE()
-
-    # Causes left and right input PGA volumes to be updated
-    # (LINVOL and RINVOL)
-    def pgaLeftIPVUSet(self) -> bool:
-        return self._writeRegisterBit(_REG_LEFT_INPUT_VOLUME, 8, 1)
-
-    # Causes left and right input PGA volumes to be updated
-    # (LINVOL and RINVOL)
-    def pgaRightIPVUSet(self) -> bool:
-        return self._writeRegisterBit(_REG_RIGHT_INPUT_VOLUME, 8, 1)
-
-    # Boosts
-
-    # MIC_BOOST_GAIN_0DB or _13DB, _20DB, _29DB
-    def setLMICBOOST(self, boost_gain:int) -> bool:
-        # Limit incoming values max
-        if boost_gain > 3:
-            boost_gain = 3
-        return self._writeRegisterMultiBits(_REG_ADCL_SIGNAL_PATH, 5, 4, boost_gain)
-
-    # MIC_BOOST_GAIN_0DB or _13DB, _20DB, _29DB
-    def setRMICBOOST(self, boost_gain:int) -> bool:
-        # Limit incoming values max
-        if boost_gain > 3:
-            boost_gain = 3
-        return self._writeRegisterMultiBits(_REG_ADCR_SIGNAL_PATH, 5, 4, boost_gain)
-
-    def setMICBOOST(self, boost_gain:int) -> bool:
-        return self.setLMICBOOST(boost_gain) and self.setRMICBOOST(boost_gain)
-
-    # BOOST_MIXER_GAIN_MUTE, BOOST_MIXER_GAIN_NEG_12DB, ...
-    def setLIN2BOOST(self, boost_gain:int) -> bool:
-        # Limit incoming values max
-        if boost_gain > 7:
-            boost_gain = 7
-        return self._writeRegisterMultiBits(_REG_INPUT_BOOST_MIXER_1, 3, 1, boost_gain)
-
-    # BOOST_MIXER_GAIN_MUTE, BOOST_MIXER_GAIN_NEG_12DB, ...
-    def setRIN2BOOST(self, boost_gain:int) -> bool:
-        # Limit incoming values max
-        if boost_gain > 7:
-            boost_gain = 7
-        return self._writeRegisterMultiBits(_REG_INPUT_BOOST_MIXER_2, 3, 1, boost_gain)
-
-    def setIN2BOOST(self, boost_gain:int) -> bool:
-        return self.setLIN2BOOST(boost_gain) and self.setRIN2BOOST(boost_gain)
-
-    # BOOST_MIXER_GAIN_MUTE, BOOST_MIXER_GAIN_NEG_12DB, ...
-    def setLIN3BOOST(self, boost_gain:int) -> bool:
-        # Limit incoming values max
-        if boost_gain > 7:
-            boost_gain = 7
-        return self._writeRegisterMultiBits(_REG_INPUT_BOOST_MIXER_1, 6, 4, boost_gain)
-
-    # BOOST_MIXER_GAIN_MUTE, BOOST_MIXER_GAIN_NEG_12DB, ...
-    def setRIN3BOOST(self, boost_gain:int) -> bool:
-        # Limit incoming values max
-        if boost_gain > 7:
-            boost_gain = 7
-        return self._writeRegisterMultiBits(_REG_INPUT_BOOST_MIXER_2, 6, 4, boost_gain)
-
-    def setIN3BOOST(self, boost_gain:int) -> bool:
-        return self.setLIN3BOOST(boost_gain) and self.setRIN3BOOST(boost_gain)
-
-    # Mic Bias control
-    def enableMicBias(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_1, 1, 1)
-    def disableMicBias(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_1, 1, 0)
-
-    # MIC_BIAS_VOLTAGE_0_9_AVDD (0.9*AVDD)
-    # or MIC_BIAS_VOLTAGE_0_65_AVDD (0.65*AVDD)
-    def setMicBiasVoltage(self, voltage:bool) -> bool:
-        return self._writeRegisterBit(_REG_ADDITIONAL_CONTROL_4, 0, voltage)
-
-    ## ADC
-
-    def enableAdcLeft(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_1, 3, 1)
-    def disableAdcLeft(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_1, 3, 0)
-
-    def enableAdcRight(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_1, 2, 1)
-    def disableAdcRight(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_1, 2, 0)
-
-    def enableAdc(self) -> bool:
-        return self.enableAdcLeft() and self.enableAdcRight()
-    def disableAdc(self) -> bool:
-        return self.disableAdcLeft() and self.disableAdcRight()
-
-    # ADC digital volume
-    # Note, also needs to handle control of the ADCVU bits (volume update).
-    # Valid inputs are 0-255
-    # 0 = mute
-    # 1 = -97dB
-    # ... 0.5dB steps up to
-    # 195 = 0dB
-    # 255 = +30dB
-    def setAdcLeftDigitalVolume(self, volume:int) -> bool:
-        if not self._writeRegisterMultiBits(_REG_LEFT_ADC_VOLUME, 7, 0, volume): return False
-        return self.adcLeftADCVUSet()
-    def setAdcRightDigitalVolume(self, volume:int) -> bool:
-        if not self._writeRegisterMultiBits(_REG_RIGHT_ADC_VOLUME, 7, 0, volume): return False
-        return self.adcRightADCVUSet()
-
-    '''
-    ADC digital volume DB
-    Sets the volume of the ADC to a specified dB value passed in as a float 
-    argument.
-    Valid dB settings are -97.00 up to +30.0 (0.5dB steps)
-    -97.50 (or lower) = MUTE
-    -97.00 = -97.00dB (MIN)
-    ... 0.5dB steps ...
-    30.00 = +30.00dB  (MAX)
-    '''
-    def setAdcLeftDigitalVolumeDB(self, dB:float) -> bool:
-        # Create an unsigned integer volume setting variable we can send to setAdcLeftDigitalVolume()
-        volume = self.convertDBtoSetting(dB, ADC_GAIN_OFFSET, ADC_GAIN_STEPSIZE, ADC_GAIN_MIN, ADC_GAIN_MAX)
-        return self.setAdcLeftDigitalVolume(volume)
-    def setAdcRightDigitalVolumeDB(self, dB:float) -> bool:
-        # Create an unsigned integer volume setting variable we can send to setAdcRightDigitalVolume()
-        volume = self.convertDBtoSetting(dB, ADC_GAIN_OFFSET, ADC_GAIN_STEPSIZE, ADC_GAIN_MIN, ADC_GAIN_MAX)
-        return self.setAdcRightDigitalVolume(volume)
-
-    # Causes left and right input ADC volumes to be updated
-    def adcLeftADCVUSet(self) -> bool:
-        return self._writeRegisterBit(_REG_LEFT_ADC_VOLUME, 8, 1)
-
-    # Causes left and right input ADC volumes to be updated
-    def adcRightADCVUSet(self) -> bool:
-        return self._writeRegisterBit(_REG_RIGHT_ADC_VOLUME, 8, 1)
-
-    # Control ADC volume in a stereo pair
-    def setAdcDigitalVolume(self, volume:int) -> bool:
-        return self.setAdcLeftDigitalVolume(volume) and self.setAdcRightDigitalVolume(volume)
-
-    def setAdcDigitalVolumeDB(self, dB:float) -> bool:
-        # Create an unsigned integer volume setting variable we can send to setAdcLeftDigitalVolume()
-        volume = self.convertDBtoSetting(dB, ADC_GAIN_OFFSET, ADC_GAIN_STEPSIZE, ADC_GAIN_MIN, ADC_GAIN_MAX)
-        return self.setAdcDigitalVolume(volume)
-
-    ## ALC
-
-    # Automatic Level Control
-    # Note that when the ALC function is enabled, the settings of
-    # Registers 0 and 1 (LINVOL, IPVU, LIZC, LINMUTE, RINVOL, RIZC and
-    # RINMUTE) are ignored.
-
-    # Also sets alc sample rate to match global sample rate.
-    def enableAlc(self, mode:int = ALC_MODE_STEREO) -> bool:
-        bit8 = mode >> 1
-        bit7 = mode & 0x1
-        return self._writeRegisterBit(_REG_ALC1, 8, bit8) and self._writeRegisterBit(_REG_ALC1, 7, bit7)
-    
-    def disableAlc(self) -> bool:
-        return self._writeRegisterBit(_REG_ALC1, 8, 0) and self._writeRegisterBit(_REG_ALC1, 7, 0)
-
-    # Valid inputs are 0-15
-    # 0 = -22.5dB FS ... 1.5dB steps ... 15 = -1.5dB FS
-    def setAlcTarget(self, target:int) -> bool:
-        # Limit incoming values max
-        if target > 15:
-            target = 15
-        return self._writeRegisterMultiBits(_REG_ALC1,3,0,target)
-
-    # Valid inputs are 0-10, 0 = 24ms, 1 = 48ms ... 10 = 24.58seconds
-    def setAlcDecay(self, decay:int) -> bool:
-        # Limit incoming values max
-        if decay > 10:
-            decay = 10
-        return self._writeRegisterMultiBits(_REG_ALC3, 7, 4, decay)
-
-    # Valid inputs are 0-10, 0 = 6ms, 1 = 12ms, 2 = 24ms ...
-    # 10 = 6.14seconds
-    def setAlcAttack(self, attack:int) -> bool:
-        # Limit incoming values max
-        if attack > 10:
-            attack = 10
-        return self._writeRegisterMultiBits(_REG_ALC3, 3, 0, attack)
-
-    # Valid inputs are 0-7, 0 = -12dB, ... 7 = +30dB
-    def setAlcMaxGain(self, maxGain:int) -> bool:
-        # Limit incoming values max
-        if maxGain > 7:
-            maxGain = 7
-        return self._writeRegisterMultiBits(_REG_ALC1, 6, 4, maxGain)
-
-    # Valid inputs are 0-7, 0 = -17.25dB, ... 7 = +24.75dB
-    def setAlcMinGain(self, minGain:int) -> bool:
-        # Limit incoming values max
-        if minGain > 7:
-            minGain = 7
-        return self._writeRegisterMultiBits(_REG_ALC2, 6, 4, minGain)
-
-    # Valid inputs are 0-15, 0 = 0ms, ... 15 = 43.691s
-    def setAlcHold(self, hold:int) -> bool:
-        # Limit incoming values max
-        if hold > 15:
-            hold = 15
-        return self._writeRegisterMultiBits(_REG_ALC2, 3, 0, hold)
-
-    # Peak Limiter
-    def enablePeakLimiter(self) -> bool:
-        return self._writeRegisterBit(_REG_ALC3, 8, 1)
-
-    def disablePeakLimiter(self) -> bool:
-        return self._writeRegisterBit(_REG_ALC3, 8, 0)
+    alcLimiter = WMBit(_REG_ALC3, 8, False)
 
     # Noise Gate
-    def enableNoiseGate(self) -> bool:
-        return self._writeRegisterBit(_REG_NOISE_GATE, 0, 1)
-    def disableNoiseGate(self) -> bool:
-        return self._writeRegisterBit(_REG_NOISE_GATE, 0, 0)
 
-    # 0-31, 0 = -76.5dBfs, 31 = -30dBfs
-    def setNoiseGateThreshold(self, threshold:int) -> bool:
-        # TODO
-        return False
+    noiseGateEnabled = WMBit(_REG_NOISE_GATE, 0, False)
+    noiseGateThreshold = WMBits(5, _REG_NOISE_GATE, 3, 0)
 
-    ## DAC
+    @property
+    def noiseGateThresholdDb(self) -> float:
+        return map_range(self.noiseGateThreshold, 0, 31, _GATE_THRESHOLD_MIN, _GATE_THRESHOLD_MAX)
+    @noiseGateThresholdDb.setter
+    def noiseGateThresholdDb(self, value:float) -> None:
+        self.noiseGateThreshold = round(map_range(value, _GATE_THRESHOLD_MIN, _GATE_THRESHOLD_MAX, 0, 31))
 
-    # Enable/disble each channel
-    def enableDacLeft(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_2, 8, 1)
-    def disableDacLeft(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_2, 8, 0)
+    # DAC
 
-    def enableDacRight(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_2, 7, 1)
-    def disableDacRight(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_2, 7, 0)
+    dacLeftEnabled = WMBit(_REG_PWR_MGMT_2, 8, False)
+    dacRightEnabled = WMBit(_REG_PWR_MGMT_2, 7, False)
 
-    def enableDac(self) -> bool:
-        return self.enableDacLeft() and self.enableDacRight()
-    def disableDac(self) -> bool:
-        return self.disableDacLeft() and self.disableDacRight()
-
-    # DAC digital volume
-    # Valid inputs are 0-255
-    # 0 = mute
-    # 1 = -127dB
-    # ... 0.5dB steps up to
-    # 255 = 0dB
-    def setDacLeftDigitalVolume(self, volume:int) -> bool:
-        if not self._writeRegisterMultiBits(_REG_LEFT_DAC_VOLUME, 7, 0, volume): return False
-        return self.dacLeftDACVUSet()
-
-    def setDacRightDigitalVolume(self, volume:int) -> bool:
-        if not self._writeRegisterMultiBits(_REG_RIGHT_DAC_VOLUME, 7, 0, volume): return False
-        return self.dacRightDACVUSet()
-
-    '''
-    DAC digital volume DB
-    Sets the volume of the DAC to a specified dB value passed in as a float argument.
-    Valid dB settings are -97.00 up to +30.0 (0.5dB steps)
-    -97.50 (or lower) = MUTE
-    -97.00 = -97.00dB (MIN)
-    ... 0.5dB steps ...
-    30.00 = +30.00dB  (MAX)
-    '''
-    def setDacLeftDigitalVolumeDB(self, dB:float) -> bool:
-        # Create an unsigned integer volume setting variable we can send to setDacLeftDigitalVolume()
-        volume = self.convertDBtoSetting(dB, DAC_GAIN_OFFSET, DAC_GAIN_STEPSIZE, DAC_GAIN_MIN, DAC_GAIN_MAX)
-        return self.setDacLeftDigitalVolume(volume)
-
-    def setDacRightDigitalVolumeDB(self, dB:float) -> bool:
-        # Create an unsigned integer volume setting variable we can send to setDacRightDigitalVolume()
-        volume = self.convertDBtoSetting(dB, DAC_GAIN_OFFSET, DAC_GAIN_STEPSIZE, DAC_GAIN_MIN, DAC_GAIN_MAX)
-        return self.setDacRightDigitalVolume(volume)
-
-    # Causes left and right input DAC volumes to be updated
-    def dacLeftDACVUSet(self) -> bool:
-        return self._writeRegisterBit(_REG_LEFT_DAC_VOLUME, 8, 1)
-
-    # Causes left and right input DAC volumes to be updated
-    def dacRightDACVUSet(self) -> bool:
-        return self._writeRegisterBit(_REG_RIGHT_DAC_VOLUME, 8, 1)
-
-    def setDacDigitalVolume(self, volume:int) -> bool:
-        return self.setDacLeftDigitalVolume(volume) and self.setDacRightDigitalVolume(volume)
+    @property
+    def dacEnabled(self) -> bool:
+        return self.dacLeftEnabled and self.dacRightEnabled
+    @dacEnabled.setter
+    def dacEnabled(self, value:bool) -> None:
+        self.dacLeftEnabled = self.dacRightEnabled = value
     
-    def setDacDigitalVolumeDB(self, dB:float) -> bool:
-        # Create an unsigned integer volume setting variable we can send to setDacRightDigitalVolume()
-        volume = self.convertDBtoSetting(dB, DAC_GAIN_OFFSET, DAC_GAIN_STEPSIZE, DAC_GAIN_MIN, DAC_GAIN_MAX)
-        return self.setDacDigitalVolume(volume)
+    _dacLeftVolume = WMBits(8, _REG_LEFT_DAC_VOLUME, 0, 0b11111111)
+    _dacLeftVolumeSet = WMBit(_REG_LEFT_DAC_VOLUME, 8, False)
 
-    # DAC mute
-    def enableDacMute(self) -> bool:
-        return self._writeRegisterBit(_REG_ADC_DAC_CTRL_1, 3, 1)
-    def disableDacMute(self) -> bool:
-        return self._writeRegisterBit(_REG_ADC_DAC_CTRL_1, 3, 0)
+    @property
+    def dacLeftVolume(self) -> int:
+        return self._dacLeftVolume
+    @dacLeftVolume.setter
+    def dacLeftVolume(self, value:int) -> None:
+        self._dacLeftVolume = value
+        self._dacLeftVolumeSet = True
 
-    # DE-Emphasis
+    @property
+    def dacLeftVolumeDb(self) -> float:
+        return map_range(max(self.dacLeftVolume, 1), 1, 255, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX)
+    @dacLeftVolumeDb.setter
+    def dacLeftVolumeDb(self, value:float) -> None:
+        self.dacLeftVolume = round(map_range(value, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX, 0, 254) + 1.0)
 
-    # 3D Stereo Enhancement
-    # 3D enable/disable
-    def enable3d(self) -> bool:
-        return self._writeRegisterBit(_REG_3D_CONTROL, 0, 1)
-    def disable3d(self) -> bool:
-        return self._writeRegisterBit(_REG_3D_CONTROL, 0, 0)
-    def set3dDepth(self, depth:int): # 0 = 0%, 15 = 100%
-        # Limit incoming values max
-        if depth > 15:
-            depth = 15
-        return self._writeRegisterMultiBits(_REG_3D_CONTROL, 4, 1, depth)
+    _dacRightVolume = WMBits(8, _REG_RIGHT_DAC_VOLUME, 0, 0b11111111)
+    _dacRightVolumeSet = WMBit(_REG_RIGHT_DAC_VOLUME, 8, False)
 
-    # 3D upper/lower cut-off frequencies.
+    @property
+    def dacRightVolume(self) -> int:
+        return self._dacRightVolume
+    @dacRightVolume.setter
+    def dacRightVolume(self, value:int) -> None:
+        self._dacRightVolume = value
+        self._dacRightVolumeSet = True
 
-    # DAC output -6dB attentuation enable/disable
-    def enableDac6dbAttenuation(self) -> bool:
-        return self._writeRegisterBit(_REG_ADC_DAC_CTRL_1, 7, 1)
-    def disableDac6dbAttentuation(self) -> bool:
-        return self._writeRegisterBit(_REG_ADC_DAC_CTRL_1, 7, 0)
+    @property
+    def dacRightVolumeDb(self) -> float:
+        return map_range(max(self.dacRightVolume, 1), 1, 255, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX)
+    @dacRightVolumeDb.setter
+    def dacRightVolumeDb(self, value:float) -> None:
+        self.dacRightVolume = round(map_range(value, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX, 0, 254) + 1.0)
 
-    ## OUTPUT mixers
-
-    # What's connected to what? Oh so many options...
-    # LOMIX	Left Output Mixer
-    # ROMIX	Right Output Mixer
-    # OUT3MIX		Mono Output Mixer
-
-    # Enable/disable left and right output mixers
-    def enableLOMIX(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_3, 3, 1)
-    def disableLOMIX(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_3, 3, 0)
-
-    def enableROMIX(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_3, 2, 1)
-    def disableROMIX(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_3, 2, 0)
-
-    def enableOUT3MIX(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_2, 1, 1)
-    def disableOUT3MIX(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_2, 1, 0)
-
-    # Enable/disable audio path connections/vols to/from output mixers
-    # See datasheet page 35 for a nice image of all the connections.
-
-    def enableLI2LO(self) -> bool:
-        return self._writeRegisterBit(_REG_LEFT_OUT_MIX_1, 7, 1)
-    def disableLI2LO(self) -> bool:
-        return self._writeRegisterBit(_REG_LEFT_OUT_MIX_1, 7, 0)
-
-    # 0-7, 0 = 0dB, ... 3dB steps ... 7 = -21dB
-    def setLI2LOVOL(self, volume:int) -> bool:
-        return self._writeRegisterMultiBits(_REG_LEFT_OUT_MIX_1, 6, 4, volume)
-
-    def enableLB2LO(self) -> bool:
-        return self._writeRegisterBit(_REG_BYPASS_1, 7, 1)
-    def disableLB2LO(self) -> bool:
-        return self._writeRegisterBit(_REG_BYPASS_1, 7, 0)
-
-    # 0-7, 0 = 0dB, ... 3dB steps ... 7 = -21dB
-    def setLB2LOVOL(self, volume:int) -> bool:
-        # Limit incoming values max
-        if volume > 7:
-            volume = 7
-        return self._writeRegisterMultiBits(_REG_BYPASS_1, 6, 4, volume)
-
-    def enableLD2LO(self) -> bool:
-        return self._writeRegisterBit(_REG_LEFT_OUT_MIX_1, 8, 1)
-    def disableLD2LO(self) -> bool:
-        return self._writeRegisterBit(_REG_LEFT_OUT_MIX_1, 8, 0)
-
-    def enableRI2RO(self) -> bool:
-        return self._writeRegisterBit(_REG_RIGHT_OUT_MIX_2, 7, 1)
-    def disableRI2RO(self) -> bool:
-        return self._writeRegisterBit(_REG_RIGHT_OUT_MIX_2, 7, 0)
-
-    # 0-7, 0 = 0dB, ... 3dB steps ... 7 = -21dB
-    def setRI2ROVOL(self, volume:int) -> bool:
-        # Limit incoming values max
-        if volume > 7:
-            volume = 7
-        return self._writeRegisterMultiBits(_REG_RIGHT_OUT_MIX_2, 6, 4, volume)
-
-    def enableRB2RO(self) -> bool:
-        return self._writeRegisterBit(_REG_BYPASS_2, 7, 1)
-    def disableRB2RO(self) -> bool:
-        return self._writeRegisterBit(_REG_BYPASS_2, 7, 0)
-
-    # 0-7, 0 = 0dB, ... 3dB steps ... 7 = -21dB
-    def setRB2ROVOL(self, volume:int) -> bool:
-        # Limit incoming values max
-        if volume > 7:
-            volume = 7
-        return self._writeRegisterMultiBits(_REG_BYPASS_2, 6, 4, volume)
-
-    def enableRD2RO(self) -> bool:
-        return self._writeRegisterBit(_REG_RIGHT_OUT_MIX_2, 8, 1)
-    def disableRD2RO(self) -> bool:
-        return self._writeRegisterBit(_REG_RIGHT_OUT_MIX_2, 8, 0)
-
-    # Mono Output mixer.
-    # Note, for capless HPs, we'll want this to output a buffered VMID.
-    # To do this, we need to disable both of these connections.
-    def enableLI2MO(self) -> bool:
-        return self._writeRegisterBit(_REG_MONO_OUT_MIX_1, 7, 1)
-    def disableLI2MO(self) -> bool:
-        return self._writeRegisterBit(_REG_MONO_OUT_MIX_1, 7, 0)
-
-    def enableRI2MO(self) -> bool:
-        return self._writeRegisterBit(_REG_MONO_OUT_MIX_2, 7, 1)
-    def disableRI2MO(self) -> bool:
-        return self._writeRegisterBit(_REG_MONO_OUT_MIX_2, 7, 0)
-
-    # Paired stereo functions to enable/disable output mixers
-    def enableI2O(self) -> bool:
-        return self.enableLI2LO() and self.enableRI2RO()
-    def disableI2O(self) -> bool:
-        return self.disableLI2LO() and self.disableRI2RO()
-    def setI2OVOL(self, volume:int) -> bool:
-        return self.setLI2LOVOL(volume) and self.setRI2ROVOL(volume)
-
-    def enableB2O(self) -> bool:
-        return self.enableLB2LO() and self.enableRB2RO()
-    def disableB2O(self) -> bool:
-        return self.disableLB2LO() and self.disableRB2RO()
-    def setB2OVOL(self, volume:int) -> bool:
-        return self.setLB2LOVOL(volume) and self.setRB2ROVOL(volume)
-
-    def enableD2O(self) -> bool:
-        return self.enableLD2LO() and self.enableRD2RO()
-    def disableD2O(self) -> bool:
-        return self.disableLD2LO() and self.disableRD2RO()
+    @property
+    def dacVolume(self) -> int:
+        return self.dacLeftVolume
+    @dacVolume.setter
+    def dacVolume(self, value:float) -> None:
+        self.dacLeftVolume = self.dacRightVolume = value
     
-    def enableI2MO(self) -> bool:
-        return self.enableLI2MO() and self.enableRI2MO()
-    def disableI2MO(self) -> bool:
-        return self.disableLI2MO() and self.disableRI2MO()
+    @property
+    def dacVolumeDb(self) -> int:
+        return self.dacLeftVolumeDb
+    @dacVolume.setter
+    def dacVolume(self, value:float) -> None:
+        self.dacLeftVolume = self.dacRightVolume = round(map_range(value, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX, 0, 254) + 1.0)
 
-    def enableOMIX(self) -> bool:
-        return self.enableLOMIX() and self.enableROMIX()
-    def disableOMIX(self) -> bool:
-        return self.disableLOMIX() and self.disableROMIX()
+    dacMute = WMBit(_REG_ADC_DAC_CTRL_1, 3, True)
+    dacSoftMute = WMBit(_REG_ADC_DAC_CTRL_2, 3, False)
+    dacSlowSoftMute = WMBit(_REG_ADC_DAC_CTRL_2, 2, 1)
+    dacAttenuation = WMBit(_REG_ADC_DAC_CTRL_1, 7, False)
 
-    # Sets the VMID signal to one of three possible settings.
-    # 4 options:
-    # VMIDSEL_DISABLED
-    # VMIDSEL_2X50KOHM (playback / record)
-    # VMIDSEL_2X250KOHM (for low power / standby)
-    # VMIDSEL_2X5KOHM (for fast start-up)
-    def setVMID(self, setting:int = VMIDSEL_2X50KOHM) -> bool:
-        return self._writeRegisterMultiBits(_REG_PWR_MGMT_1, 8, 7, setting)
+    # 3D Enhance
+
+    enhanceEnabled = WMBit(_REG_3D_CONTROL, 0, 1)
+    enhanceDepth = WMBits(4, _REG_3D_CONTROL, 1, 0)
+    enhanceFilterLPF = WMBit(_REG_3D_CONTROL, 6, False)
+    enhanceFilterHPF = WMBit(_REG_3D_CONTROL, 5, False)
+
+    # Output Mixer
+
+    leftOutputEnabled = WMBit(_REG_PWR_MGMT_3, 3, False)
+    rightOutputEnabled = WMBit(_REG_PWR_MGMT_3, 2, False)
+
+    @property
+    def stereoOutputEnabled(self) -> bool:
+        return self.leftOutputEnabled and self.rightOutputEnabled
+    @stereoOutputEnabled.setter
+    def stereoOutputEnabled(self, value:bool):
+        self.leftOutputEnabled = self.rightOutputEnabled = value
+
+    ## DAC Output
+
+    dacLeftOutputEnabled = WMBit(_REG_LEFT_OUT_MIX, 8, False)
+    dacRightOutputEnabled = WMBit(_REG_RIGHT_OUT_MIX, 8, False)
+
+    @property
+    def dacOutputEnabled(self) -> bool:
+        return self.dacLeftOutputEnabled and self.dacRightOutputEnabled
+    @dacOutputEnabled.setter
+    def dacOutputEnabled(self, value:bool) -> None:
+        self.dacLeftOutputEnabled = self.dacRightOutputEnabled = value
+
+    ## Input 3 Output
+
+    input3LeftOutputEnabled = WMBit(_REG_LEFT_OUT_MIX, 7, False)
+    input3RightOutputEnabled = WMBit(_REG_RIGHT_OUT_MIX, 7, False)
     
-    # Enables VMID in the _REG_PWR_MGMT_2 register, and set's it to 
-    # playback/record settings of 2*50Kohm.
-    # Note, this function is only here for backwards compatibility with the
-    # original releases of this library. It is recommended to use the
-    # setVMID() function instead.
-    def enableVMID(self) -> bool:
-        return self.setVMID(VMIDSEL_2X50KOHM)
-    def disableVMID(self) -> bool:
-        return self.setVMID(VMIDSEL_DISABLED)
+    @property
+    def input3OutputEnabled(self) -> bool:
+        return self.input3LeftOutputEnabled and self.input3RightOutputEnabled
+    @input3OutputEnabled.setter
+    def input3OutputEnabled(self, value:bool) -> None:
+        self.input3LeftOutputEnabled = self.input3RightOutputEnabled = value
 
-    # This will disable both connections, thus enable VMID on OUT3. Note,
-    # to enable VMID, you also need to enable OUT3 in the
-    # _REG_PWR_MGMT_2 [1]
-    def enableOUT3asVMID(self) -> bool:
-        return self.disableLI2MO() and self.disableRI2MO() and self.enableOUT3MIX() and self.enableVMID()
-    
+    input3LeftOutputVolume = WMBits(3, _REG_LEFT_OUT_MIX, 4, 0b101)
+
+    @property
+    def input3LeftOutputVolumeDb(self) -> float:
+        return map_range(self.input3LeftOutputVolume, 0, 7, _OUTPUT_VOLUME_MAX, _OUTPUT_VOLUME_MIN)
+    @input3LeftOutputVolumeDb.setter
+    def input3LeftOutputVolumeDb(self, value:float) -> None:
+        self.input3LeftOutputVolume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+
+    input3RightOutputVolume = WMBits(3, _REG_RIGHT_OUT_MIX, 4, 0b101)
+
+    @property
+    def input3RightOutputVolumeDb(self) -> float:
+        return map_range(self.input3RightOutputVolume, 0, 7, _OUTPUT_VOLUME_MAX, _OUTPUT_VOLUME_MIN)
+    @input3RightOutputVolumeDb.setter
+    def input3RightOutputVolumeDb(self, value:float) -> None:
+        self.input3RightOutputVolume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+
+    @property
+    def input3OutputVolume(self) -> int:
+        return self.input3LeftOutputVolume
+    @input3OutputVolume.setter
+    def input3OutputVolume(self, value:int) -> None:
+        self.input3LeftOutputVolume = self.input3RightOutputVolume = value
+
+    @property
+    def input3OutputVolumeDb(self) -> float:
+        return self.input3LeftOutputVolumeDb
+    @input3OutputVolumeDb.setter
+    def input3OutputVolumeDb(self, value:float) -> None:
+        self.input3LeftOutputVolume = self.input3RightOutputVolume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+
+    ## PGA Boost Mixer Output
+
+    pgaBoostLeftOutputEnabled = WMBit(_REG_BYPASS_1, 7, False)
+    pgaBoostRightOutputEnabled = WMBit(_REG_BYPASS_2, 7, False)
+
+    @property
+    def pgaBoostOutputEnabled(self) -> bool:
+        return self.pgaBoostLeftOutputEnabled and self.pgaBoostRightOutputEnabled
+
+    pgaBoostLeftOutputVolume = WMBits(3, _REG_BYPASS_1, 4, 0b101)
+
+    @property
+    def pgaBoostLeftOutputVolumeDb(self) -> float:
+        return map_range(self.pgaBoostLeftOutputVolume, 0, 7, _OUTPUT_VOLUME_MAX, _OUTPUT_VOLUME_MIN)
+    @pgaBoostLeftOutputVolumeDb.setter
+    def pgaBoostLeftOutputVolumeDb(self, value:float) -> None:
+        self.pgaBoostLeftOutputVolume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+
+    pgaBoostRightOutputVolume = WMBits(3, _REG_BYPASS_2, 4, 0b101)
+
+    @property
+    def pgaBoostRightOutputVolumeDb(self) -> float:
+        return map_range(self.pgaBoostRightOutputVolume, 0, 7, _OUTPUT_VOLUME_MAX, _OUTPUT_VOLUME_MIN)
+    @pgaBoostRightOutputVolumeDb.setter
+    def pgaBoostRightOutputVolumeDb(self, value:float) -> None:
+        self.pgaBoostRightOutputVolume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+
+    @property
+    def pgaBoostOutputVolume(self) -> int:
+        return self.pgaBoostLeftOutputVolume
+    @pgaBoostOutputVolume.setter
+    def pgaBoostOutputVolume(self, value:int) -> None:
+        self.pgaBoostLeftOutputVolume = self.pgaBoostRightOutputVolume = value
+
+    @property
+    def pgaBoostOutputVolumeDb(self) -> float:
+        return self.pgaBoostLeftOutputVolumeDb
+    @pgaBoostOutputVolumeDb.setter
+    def pgaBoostOutputVolumeDb(self, value:float) -> None:
+        self.pgaBoostLeftOutputVolume = self.pgaBoostRightOutputVolume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+
+    ## Mono Output
+
+    monoOutputEnabled = WMBit(_REG_PWR_MGMT_2, 1, False)
+
+    monoLeftMixEnabled = WMBit(_REG_MONO_OUT_MIX_1, 7, False)
+    monoRightMixEnabled = WMBit(_REG_MONO_OUT_MIX_2, 7, False)
+
+    @property
+    def monoMixEnabled(self) -> bool:
+        return self.monoLeftMixEnabled and self.monoRightMixEnabled
+    @monoMixEnabled.setter
+    def monoMixEnabled(self, value:bool) -> None:
+        self.monoLeftMixEnabled = self.monoRightMixEnabled = value
+
+    monoOutputAttenuation = WMBit(_REG_MONO_OUT_VOLUME, 6, True)
+
+    vmid = WMBits(2, _REG_PWR_MGMT_1, 7, 0)
+
+    # Amplifier
+
     ## Headphones
 
-    # Enable and disable headphones (mute)
-    def enableHeadphones(self) -> bool:
-        return self.enableRightHeadphone() and self.enableLeftHeadphone()
-    def disableHeadphones(self) -> bool:
-        return self.disableRightHeadphone() and self.disableLeftHeadphone()
+    leftHeadphoneEnabled = WMBit(_REG_PWR_MGMT_2, 5, False)
+    rightHeadphoneEnabled = WMBit(_REG_PWR_MGMT_2, 6, False)
 
-    def enableRightHeadphone(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_2, 5, 1)
-    def disableRightHeadphone(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_2, 5, 0)
-    def enableLeftHeadphone(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_2, 6, 1)
-    def disableLeftHeadphone(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_2, 6, 0)
+    @property
+    def headphoneEnabled(self) -> bool:
+        return self.leftHeadphoneEnabled and self.rightHeadphoneEnabled
+    @headphoneEnabled.setter
+    def headphoneEnabled(self, value:bool) -> None:
+        self.leftHeadphoneEnabled = self.rightHeadphoneEnabled = value
 
-    def enableHeadphoneStandby(self) -> bool:
-        return self._writeRegisterBit(_REG_ANTI_POP_1, 0, 1)
-    def disableHeadphoneStandby(self) -> bool:
-        return self._writeRegisterBit(_REG_ANTI_POP_1, 0, 0)
+    headphoneStandby = WMBit(_REG_ANTI_POP_1, 0, False)
 
-    # Set headphone volume
-    # Although you can control each headphone output independently, here
-    # we are going to assume you want both left and right to do the same
-    # thing.
+    _leftHeadphoneVolume = WMBits(7, _REG_LOUT1_VOLUME, 0, 0)
+    _leftHeadphoneVolumeSet = WMBit(_REG_LOUT1_VOLUME, 8, False)
 
-    # Valid inputs are 47-127. 0-47 = mute, 48 = -73dB ... 1dB steps ...
-    # 127 = +6dB
-    def setHeadphoneVolume(self, volume:int) -> bool:
-        # Updates both left and right channels
-        # Handles the OUT1VU (volume update) bit control, so that it happens at the 
-        # same time on both channels. Note, we must also make sure that the outputs 
-        # are enabled in the _REG_PWR_MGMT_2 [6:5]
-        # Grab local copy of register
-        # Modify the bits we need to
-        # Write register in device, including the volume update bit write
-        # If successful, save locally.
+    @property
+    def leftHeadphoneVolume(self) -> int:
+        return self._leftHeadphoneVolume
+    @leftHeadphoneVolume.setter
+    def leftHeadphoneVolume(self, value:int) -> None:
+        self._leftHeadphoneVolume = value
+        self._leftHeadphoneVolumeSet = True
 
-        # Limit inputs
-        if volume > 127:
-            volume = 127
+    @property
+    def leftHeadphoneVolumeDb(self) -> float:
+        return map_range(max(self.leftHeadphoneVolume, 48), 48, 127, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX)
+    @leftHeadphoneVolumeDb.setter
+    def leftHeadphoneVolumeDb(self, value:float) -> None:
+        self.leftHeadphoneVolume = round(map_range(value, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX, 48, 127))
 
-        # LEFT
-        if not self._writeRegisterMultiBits(_REG_LOUT1_VOLUME, 6, 0, volume): return False
+    _rightHeadphoneVolume = WMBits(7, _REG_ROUT1_VOLUME, 0, 0)
+    _rightHeadphoneVolumeSet = WMBit(_REG_ROUT1_VOLUME, 8, False)
 
-        # RIGHT
-        if not self._writeRegisterMultiBits(_REG_ROUT1_VOLUME, 6, 0, volume): return False
+    @property
+    def rightHeadphoneVolume(self) -> int:
+        return self._rightHeadphoneVolume
+    @rightHeadphoneVolume.setter
+    def rightHeadphoneVolume(self, value:int) -> None:
+        self._rightHeadphoneVolume = value
+        self._rightHeadphoneVolumeSet = True
 
-        # UPDATES
-        # Updated left channel
-        if not self._writeRegisterBit(_REG_LOUT1_VOLUME, 8, 1): return False
+    @property
+    def rightHeadphoneVolumeDb(self) -> float:
+        return map_range(max(self.rightHeadphoneVolume, 48), 48, 255, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX)
+    @rightHeadphoneVolumeDb.setter
+    def rightHeadphoneVolumeDb(self, value:float) -> None:
+        self.rightHeadphoneVolume = round(map_range(value, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX, 48, 127))
 
-        # Updated right channel
-        return self._writeRegisterBit(_REG_ROUT1_VOLUME, 8, 1)
+    @property
+    def headphoneVolume(self) -> int:
+        return self.leftHeadphoneVolume
+    @headphoneVolume.setter
+    def headphoneVolume(self, value:float) -> None:
+        self.leftHeadphoneVolume = self.rightHeadphoneVolume = value
+    
+    @property
+    def headphoneVolumeDb(self) -> int:
+        return self.leftHeadphoneVolumeDb
+    @headphoneVolumeDb.setter
+    def headphoneVolumeDb(self, value:float) -> None:
+        self.leftHeadphoneVolume = self.rightHeadphoneVolume = round(map_range(value, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX, 48, 127) + 1.0)
 
-    # Set headphone volume dB
-    # Sets the volume of the headphone output buffer amp to a speicified
-    # dB value passed in as a float argument.
-    # Valid dB settings are -74.0 up to +6.0
-    # User input will be rounded to nearest whole integer
-    # -74 (or lower) = MUTE
-    # -73 = -73dB (MIN)
-    # ... 1dB steps ...
-    # 0 = 0dB
-    # ... 1dB steps ...
-    # 6 = +6dB  (MAX)
-    def setHeadphoneVolumeDB(self, dB:float) -> bool:
-        # Create an unsigned integer volume setting variable we can send to setHeadphoneVolume()
-        volume = self.convertDBtoSetting(dB, HP_GAIN_OFFSET, HP_GAIN_STEPSIZE, HP_GAIN_MIN, HP_GAIN_MAX)
-        return self.setHeadphoneVolume(volume)
+    leftHeadphoneZeroCross = WMBit(_REG_LOUT1_VOLUME, 7, False)
+    rightHeadphoneZeroCross = WMBit(_REG_LOUT1_VOLUME, 7, False)
 
-    # Zero Cross prevents zipper sounds on volume changes
-    # Sets both left and right Headphone outputs
-    def enableHeadphoneZeroCross(self) -> bool:
-        # Left
-        if not self._writeRegisterBit(_REG_LOUT1_VOLUME, 7, 1): return False
-        # Right
-        return self._writeRegisterBit(_REG_ROUT1_VOLUME, 7, 1)
-
-    def disableHeadphoneZeroCross(self) -> bool:
-        # Left
-        if not self._writeRegisterBit(_REG_LOUT1_VOLUME, 7, 0): return False
-        # Right
-        return self._writeRegisterBit(_REG_ROUT1_VOLUME, 7, 0)
+    @property
+    def headphoneZeroCross(self) -> bool:
+        return self.leftHeadphoneZeroCross and self.rightHeadphoneZeroCross
+    @headphoneZeroCross.setter
+    def headphoneZeroCross(self, value:bool) -> None:
+        self.leftHeadphoneZeroCross = self.rightHeadphoneZeroCross = value
 
     ## Speakers
 
-    # Enable and disable speakers (mute)
-    def enableSpeakers(self) -> bool:
-        return self.enableRightSpeaker() and self.enableLeftSpeaker()
-    def disableSpeakers(self) -> bool:
-        return self.disableRightSpeaker() and self.disableLeftSpeaker()
+    _leftSpeakerEnabled = WMBit(_REG_PWR_MGMT_2, 4, False)
+    _leftSpeakerAmpEnabled = WMBit(_REG_CLASS_D_CONTROL_1, 6, False)
 
-    def enableRightSpeaker(self) -> bool:
-        # SPK_OP_EN
-        if not self._writeRegisterBit(_REG_CLASS_D_CONTROL_1, 7, 1): return False
-        # SPKR
-        return self._writeRegisterBit(_REG_PWR_MGMT_2, 3, 1)
-
-    def disableRightSpeaker(self) -> bool:
-        # SPK_OP_EN
-        if not self._writeRegisterBit(_REG_CLASS_D_CONTROL_1, 7, 0): return False
-        # SPKR
-        return self._writeRegisterBit(_REG_PWR_MGMT_2, 3, 0)
-
-    def enableLeftSpeaker(self) -> bool:
-        # SPK_OP_EN
-        if not self._writeRegisterBit(_REG_CLASS_D_CONTROL_1, 6, 1): return False
-        # SPKL
-        return self._writeRegisterBit(_REG_PWR_MGMT_2, 4, 1)
-
-    def disableLeftSpeaker(self) -> bool:
-        # SPK_OP_EN
-        if not self._writeRegisterBit(_REG_CLASS_D_CONTROL_1, 6, 0): return False
-        # SPKL
-        return self._writeRegisterBit(_REG_PWR_MGMT_2, 4, 0)
-
-    # Set Speaker output volume
-    # Although you can control each Speaker output independently, here we
-    # are going to assume you want both left and right to do the same thing.
-    # Valid inputs are 47-127. 0-47 = mute, 48 = -73dB ... 1dB steps ...
-    # 127 = +6dB
-
-    def setSpeakerVolume(self, volume:int) -> bool:
-        # Updates both left and right channels
-        # Handles the SPKVU (volume update) bit control, so that it happens at the 
-        # same time on both channels. Note, we must also make sure that the outputs 
-        # are enabled in the _REG_PWR_MGMT_2 [4:3], and the class D control 
-        # reg _REG_CLASS_D_CONTROL_1 [7:6]
-
-        # Limit inputs
-        if volume > 127:
-            volume = 127
-
-        # LEFT
-        if not self._writeRegisterMultiBits(_REG_LOUT2_VOLUME, 6, 0, volume): return False
-        # RIGHT
-        if not self._writeRegisterMultiBits(_REG_ROUT2_VOLUME, 6, 0, volume): return False
-
-        # SPKVU
-        # Updated left channel
-        if not self._writeRegisterBit(_REG_LOUT2_VOLUME, 8, 1): return False
-        # Updated right channel
-        return self._writeRegisterBit(_REG_ROUT2_VOLUME, 8, 1)
-
-    def setSpeakerVolumeDB(self, dB:float) -> bool:
-        # Create an unsigned integer volume setting variable we can send to setSpeakerVolume()
-        volume = self.convertDBtoSetting(dB, SPEAKER_GAIN_OFFSET, SPEAKER_GAIN_STEPSIZE, SPEAKER_GAIN_MIN, SPEAKER_GAIN_MAX)
-        return self.setSpeakerVolume(volume)
-
-    # Zero Cross prevents zipper sounds on volume changes
-    # Sets both left and right Speaker outputs
-    def enableSpeakerZeroCross(self) -> bool:
-        # Left
-        if not self._writeRegisterBit(_REG_LOUT2_VOLUME, 7, 1): return False
-        # Right
-        return self._writeRegisterBit(_REG_ROUT2_VOLUME, 7, 1)
-
-    def disableSpeakerZeroCross(self) -> bool:
-        # Left
-        if not self._writeRegisterBit(_REG_LOUT2_VOLUME, 7, 0): return False
-        # Right
-        return self._writeRegisterBit(_REG_ROUT2_VOLUME, 7, 0)
-
-    # DC and AC gain - allows signal to be higher than the DACs swing
-    # (use only if your SPKVDD is high enough to handle a larger signal)
-    # Valid inputs are 0-5
-    # 0 = +0dB (1.0x boost) ... up to ... 5 = +5.1dB (1.8x boost)
-    def setSpeakerDcGain(self, gain:int) -> bool:
-        # Limit incoming values max
-        if gain > 5:
-            gain = 5
-        return self._writeRegisterMultiBits(_REG_CLASS_D_CONTROL_3, 5, 3, gain)
-
-    def setSpeakerAcGain(self, gain:int) -> bool:
-        # Limit incoming values max
-        if gain > 5:
-            gain = 5
-        return self._writeRegisterMultiBits(_REG_CLASS_D_CONTROL_3, 2, 0, gain)
-
-    ## Digital audio interface control
-
-    # Defaults to I2S, peripheral-mode, 24-bit word length
-
-    # Loopback
-    # When enabled, the output data from the ADC audio interface is fed
-    # directly into the DAC data input.
-    def enableLoopBack(self) -> bool:
-        return self._writeRegisterBit(_REG_AUDIO_INTERFACE_2, 0, 1)
-    def disableLoopBack(self) -> bool:
-        return self._writeRegisterBit(_REG_AUDIO_INTERFACE_2, 0, 0)
-
-    ## Clock controls
-
-    # Getting the Frequency of SampleRate as we wish
-    # Our MCLK (an external clock on the SFE breakout board) is 24.0MHz.
-    # According to table 40 (DS pg 58), we want SYSCLK to be 11.2896 for a
-    # SR of 44.1KHz. To get that Desired Output (SYSCLK), we need the
-    # following settings on the PLL stuff:
-    # As found on table 45 (ds pg 61).
-    # PRESCALE DIVIDE (PLLPRESCALE): 2
-    # POSTSCALE DVIDE (SYSCLKDIV[1:0]): 2
-    # FIXED POST-DIVIDE: 4
-    # R: 7.5264
-    # N: 7h
-    # K: 86C226h
-
-    # Example at bottom of table 46, shows that we should be in fractional
-    # mode for a 44.1KHz.
-
-    # In terms of registers, this is what we want for 44.1KHz
-    # PLLEN=1			(PLL enable)
-    # PLLPRESCALE=1	(divide by 2) *This get's us from MCLK (24MHz) down
-    # to 12MHZ for F2
-    # PLLN=7h			(PLL N value) *this is "int R"
-    # PLLK=86C226h		(PLL K value) *this is int ( 2^24 * (R- intR))
-    # SDM=1			(Fractional mode)
-    # CLKSEL=1			(PLL select)
-    # MS=0				(Peripheral mode)
-    # WL=00			(16 bits)
-    # SYSCLKDIV=2		(Divide by 2)
-    # ADCDIV=000		(Divide by 1) = 44.1kHz
-    # DACDIV=000		(Divide by 1) = 44.1kHz
-    # BCLKDIV=0100		(Divide by 4) = 64fs
-    # DCLKDIV=111		(Divide by 16) = 705.6kHz
-
-    # And now for the functions that will set these registers...
-    def enablePLL(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_2, 0, 1)
-    def disablePLL(self) -> bool:
-        return self._writeRegisterBit(_REG_PWR_MGMT_2, 0, 0)
-
-    # Valid options are PLLPRESCALE_DIV_1, PLLPRESCALE_DIV_2
-    def setPLLPRESCALE(self, div:bool) -> bool:
-        return self._writeRegisterBit(_REG_PLL_N, 4, div)
-
-    def setPLLN(self, n:int) -> bool:
-        return self._writeRegisterMultiBits(_REG_PLL_N, 3, 0, n)
-
-    # Send each nibble of 24-bit value for value K
-    def setPLLK(self, k:int) -> bool:
-        if not self._writeRegisterMultiBits(_REG_PLL_K_1, 5, 0, (k >> 16) & 0x1F): return False
-        if not self._writeRegisterMultiBits(_REG_PLL_K_2, 8, 0, (k >> 8) & 0xFF): return False
-        return self._writeRegisterMultiBits(_REG_PLL_K_3, 8, 0, k & 0xFF)
-
-    # 0=integer, 1=fractional
-    def setSMD(self, mode:bool) -> bool:
-        return self._writeRegisterBit(_REG_PLL_N, 5, mode)
-
-    # 0=MCLK, 1=PLL_output
-    def setCLKSEL(self, sel:bool) -> bool:
-        return self._writeRegisterBit(_REG_CLOCKING_1, 0, sel)
-
-    # (0=divide by 1), (2=div by 2) *1 and 3 are "reserved"
-    def setSYSCLKDIV(self, div:int) -> bool:
-        return self._writeRegisterMultiBits(_REG_CLOCKING_1, 2, 1, div)
-
-    # 000 = SYSCLK / (1.0*256). See ds pg 57 for other options
-    def setADCDIV(self, div:int) -> bool:
-        return self._writeRegisterMultiBits(_REG_CLOCKING_1, 8, 6, div)
-
-    # 000 = SYSCLK / (1.0*256). See ds pg 57 for other options
-    def setDACDIV(self, div:int) -> bool:
-        return self._writeRegisterMultiBits(_REG_CLOCKING_1, 5, 3, div)
-
-    # 0100 (4) = sufficiently high for 24bit, div by 4 allows for max word
-    # length of 32bit
-    def setBCLKDIV(self, div:int) -> bool:
-        return self._writeRegisterMultiBits(_REG_CLOCKING_2, 3, 0, div)
-
-    # Class D amp, 111= SYSCLK/16, so 11.2896MHz/16 = 705.6KHz
-    def setDCLKDIV(self, div:int) -> bool:
-        return self._writeRegisterMultiBits(_REG_CLOCKING_2, 8, 6, div)
-
-    # Set LR clock to be the same for ADC & DAC (needed for loopback mode)
-    def setALRCGPIO(self) -> bool:
-        return self._writeRegisterBit(_REG_AUDIO_INTERFACE_2, 6, 1)
-
-    def enableMasterMode(self) -> bool:
-        return self._writeRegisterBit(_REG_AUDIO_INTERFACE_1, 6, 1)
+    @property
+    def leftSpeakerEnabled(self) -> bool:
+        return self._leftSpeakerEnabled and self._leftSpeakerAmpEnabled
+    @leftSpeakerEnabled.setter
+    def leftSpeakerEnabled(self, value:bool) -> None:
+        self._leftSpeakerEnabled = self._leftSpeakerAmpEnabled = value
     
-    def enablePeripheralMode(self) -> bool:
-        return self._writeRegisterBit(_REG_AUDIO_INTERFACE_1, 6, 0)
+    _rightSpeakerEnabled = WMBit(_REG_PWR_MGMT_2, 3, False)
+    _rightSpeakerAmpEnabled = WMBit(_REG_CLASS_D_CONTROL_1, 7, False)
 
-    def setWL(self, word_length:int) -> bool:
-        return self._writeRegisterMultiBits(_REG_AUDIO_INTERFACE_1, 3, 2, word_length)
+    @property
+    def rightSpeakerEnabled(self) -> bool:
+        return self._rightSpeakerEnabled and self._rightSpeakerAmpEnabled
+    @rightSpeakerEnabled.setter
+    def rightSpeakerEnabled(self, value:bool) -> None:
+        self._rightSpeakerEnabled = self._rightSpeakerAmpEnabled = value
 
-    def setLRP(self, polarity:bool) -> bool:
-        return self._writeRegisterBit(_REG_AUDIO_INTERFACE_1, 4, polarity)
+    @property
+    def speakerEnabled(self) -> bool:
+        return self.leftSpeakerEnabled and self.rightSpeakerEnabled
+    @speakerEnabled.setter
+    def speakerEnabled(self, value:bool) -> None:
+        self.leftSpeakerEnabled = self.rightSpeakerEnabled = value
 
-    def setALRSWAP(self, swap:bool) -> bool:
-        return self._writeRegisterBit(_REG_AUDIO_INTERFACE_1, 8, swap)
+    _leftSpeakerVolume = WMBits(7, _REG_LOUT2_VOLUME, 0, 0)
+    _leftSpeakerVolumeSet = WMBit(_REG_LOUT2_VOLUME, 8, False)
 
-    def setVROI(self, setting:bool) -> bool:
-        return self._writeRegisterBit(_REG_ADDITIONAL_CONTROL_3, 6, setting)
+    @property
+    def leftSpeakerVolume(self) -> int:
+        return self._leftSpeakerVolume
+    @leftSpeakerVolume.setter
+    def leftSpeakerVolume(self, value:int) -> None:
+        self._leftSpeakerVolume = value
+        self._leftSpeakerVolumeSet = True
 
-    def setVSEL(self, setting:int) -> bool:
-        return self._writeRegisterMultiBits(_REG_ADDITIONAL_CONTROL_1, 7, 6, setting)
+    @property
+    def leftSpeakerVolumeDb(self) -> float:
+        return map_range(max(self.leftSpeakerVolume, 48), 48, 127, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX)
+    @leftSpeakerVolumeDb.setter
+    def leftSpeakerVolumeDb(self, value:float) -> None:
+        self.leftSpeakerVolume = round(map_range(value, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX, 48, 127))
 
-    # General-purpose register write
-    def writeRegister(self, reg:int, value:int) -> bool:
-        self._buf[0] = reg << 1 | value >> 8
-        self._buf[1] = value & 0xff
-        try:
-            with self.i2c_device as i2c:
-                i2c.write(self._buf)
-        except OSError:
-            return False
-        self._registerLocalCopy[reg] = value
-        return True
+    _rightSpeakerVolume = WMBits(7, _REG_ROUT2_VOLUME, 0, 0)
+    _rightSpeakerVolumeSet = WMBit(_REG_ROUT2_VOLUME, 8, False)
 
-    # **The WM8960 does not support reading registers!!!
+    @property
+    def rightSpeakerVolume(self) -> int:
+        return self._rightSpeakerVolume
+    @rightSpeakerVolume.setter
+    def rightSpeakerVolume(self, value:int) -> None:
+        self._rightSpeakerVolume = value
+        self._rightSpeakerVolumeSet = True
 
-    # Writes a 0 or 1 to the desired bit in the desired register
-    def _writeRegisterBit(self, registerAddress:int, bitNumber:int, bitValue:bool) -> bool:
-        regvalue = self._registerLocalCopy[registerAddress]
-        if bitValue:
-            regvalue |= 1<<bitNumber
+    @property
+    def rightSpeakerVolumeDb(self) -> float:
+        return map_range(max(self.rightSpeakerVolume, 48), 48, 255, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX)
+    @rightSpeakerVolumeDb.setter
+    def rightSpeakerVolumeDb(self, value:float) -> None:
+        self.rightSpeakerVolume = round(map_range(value, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX, 48, 127))
+
+    @property
+    def speakerVolume(self) -> int:
+        return self.leftSpeakerVolume
+    @speakerVolume.setter
+    def speakerVolume(self, value:float) -> None:
+        self.leftSpeakerVolume = self.rightSpeakerVolume = value
+    
+    @property
+    def speakerVolumeDb(self) -> int:
+        return self.leftSpeakerVolumeDb
+    @speakerVolume.setter
+    def speakerVolume(self, value:float) -> None:
+        self.leftSpeakerVolume = self.rightSpeakerVolume = round(map_range(value, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX, 48, 127) + 1.0)
+
+    leftSpeakerZeroCross = WMBit(_REG_LOUT2_VOLUME, 7, False)
+    rightSpeakerZeroCross = WMBit(_REG_LOUT2_VOLUME, 7, False)
+
+    @property
+    def speakerZeroCross(self) -> bool:
+        return self.leftSpeakerZeroCross and self.rightSpeakerZeroCross
+    @speakerZeroCross.setter
+    def speakerZeroCross(self, value:bool) -> None:
+        self.leftSpeakerZeroCross = self.rightSpeakerZeroCross = value
+
+    _speakerDcGain = WMBits(3, _REG_CLASS_D_CONTROL_3, 3, 0)
+
+    @property
+    def speakerDcGain(self) -> int:
+        return self._speakerDcGain
+    @speakerDcGain.setter
+    def speakerDcGain(self, value:int) -> None:
+        self._speakerDcGain = min(value, 5)
+
+    _speakerAcGain = WMBits(3, _REG_CLASS_D_CONTROL_3, 0, 0)
+
+    @property
+    def speakerAcGain(self) -> int:
+        return self._speakerAcGain
+    @speakerAcGain.setter
+    def speakerAcGain(self, value:int) -> None:
+        self._speakerAcGain = min(value, 5)
+
+    # Digital Audio Interface Control
+
+    loopback = WMBit(_REG_AUDIO_INTERFACE_2, 0, False)
+    
+    pll = WMBit(_REG_PWR_MGMT_2, 0, False)
+    pllPrescaleDiv2 = WMBit(_REG_PWR_MGMT_2, 4, False)
+    pllN = WMBits(4, _REG_PLL_N, 0, 0x8)
+
+    _pllK1 = WMBits(6, _REG_PLL_K_1, 0, 0x31)
+    _pllK2 = WMBits(9, _REG_PLL_K_2, 0, 0x26)
+    _pllK3 = WMBits(9, _REG_PLL_K_3, 0, 0xE9)
+
+    @property
+    def pllK(self) -> int:
+        return self._pllK1 << 18 + self._pllK2 << 9 + self._pllK3
+    @pllK.setter
+    def pllK(self, value:int) -> None:
+        self._pllK1 = (value >> 18) & 0b111111
+        self._pllK2 = (value >> 9) & 0b111111111
+        self._pllK3 = value & 0b111111111
+
+    clockFractionalMode = WMBit(_REG_PLL_N, 5, False)
+
+    clockFromPLL = WMBit(_REG_CLOCKING_1, 0, False)
+
+    _systemClockDivider = WMBits(2, _REG_CLOCKING_1, 1, 0)
+    
+    @property
+    def systemClockDiv2(self) -> bool:
+        return self._systemClockDivider == _SYSCLK_DIV_BY_2
+    @systemClockDiv2.setter
+    def systemClockDiv2(self, value:bool) -> None:
+        self._systemClockDivider = _SYSCLK_DIV_BY_2 if value else _SYSCLK_DIV_BY_1
+    
+    _adcClockDivider = WMBits(3, _REG_CLOCKING_1, 6, 0)
+
+    @property
+    def adcClockDivider(self) -> int:
+        return _ADCDACDIV[min(self._adcClockDivider, len(_ADCDACDIV))]
+    @adcClockDivider.setter
+    def adcClockDivider(self, value:int) -> None:
+        value = round(value * 2.0) / 2.0
+        if value in _ADCDACDIV:
+            self._adcClockDivider = _ADCDACDIV.index(value)
+
+    _dacClockDivider = WMBits(3, _REG_CLOCKING_1, 3, 0)
+
+    @property
+    def dacClockDivider(self) -> int:
+        return _ADCDACDIV[min(self._dacClockDivider, len(_ADCDACDIV))]
+    @dacClockDivider.setter
+    def dacClockDivider(self, value:int) -> None:
+        value = round(value * 2.0) / 2.0
+        if value in _ADCDACDIV:
+            self._dacClockDivider = _ADCDACDIV.index(value)
+
+    _baseClockDivider = WMBits(4, _REG_CLOCKING_2, 0, 0)
+
+    @property
+    def baseClockDivider(self) -> float:
+        return _BCLKDIV[min(self._baseClockDivider, len(_BCLKDIV))]
+    @baseClockDivider.setter
+    def baseClockDivider(self, value:float) -> None:
+        value = round(value * 2.0) / 2.0
+        if value in _BCLKDIV:
+            self._baseClockDivider = _BCLKDIV.index(value)
+        
+
+    _ampClockDivider = WMBits(3, _REG_CLOCKING_2, 6, 0b111)
+
+    @property
+    def ampClockDivider(self) -> float:
+        return _DCLKDIV[min(self._ampClockDivider, len(_DCLKDIV))]
+    @ampClockDivider.setter
+    def ampClockDivider(self, value:float) -> None:
+        value = round(value * 2.0) / 2.0
+        if value in _DCLKDIV:
+            self._ampClockDivider = _DCLKDIV.index(value)
+
+    ## Mode
+
+    masterMode = WMBit(_REG_AUDIO_INTERFACE_1, 6, False)
+
+    _wordLength = WMBits(2, _REG_AUDIO_INTERFACE_1, 2, 0b10)
+
+    @property
+    def wordLength(self) -> int:
+        value = self._wordLength
+        if value == 3:
+            return 32
         else:
-            regvalue &= ~(1<<bitNumber)
+            return 16 + 4 * value
+    @wordLength.setter
+    def wordLength(self, value:int) -> None:
+        self._wordLength = (min(value, 28) - 16) // 4
 
-        return self.writeRegister(registerAddress, regvalue)
+    wordSelectInverted = WMBit(_REG_AUDIO_INTERFACE_1, 4, False)
 
-    '''
-    This function writes data into the desired bits within the desired register
-    Some settings require more than just flipping a single bit within a register.
-    For these settings use this more advanced register write helper function.
+    adcChannelSwap = WMBit(_REG_AUDIO_INTERFACE_1, 8, False)
 
-    For example, to change the LIN2BOOST setting to +6dB,
-    I need to write a setting of 7 (aka +6dB) to the bits [3:1] in the
-    _REG_INPUT_BOOST_MIXER_1 register. Like so...
-    _writeRegisterMultiBits(_REG_INPUT_BOOST_MIXER_1, 3, 1, 7);
-    '''
-    def _writeRegisterMultiBits(self, registerAddress:int, settingMsbNum:int, settingLsbNum:int, setting:int) -> bool:
-        regvalue = self._registerLocalCopy[registerAddress]
+    vrefOutputDisabled = WMBit(_REG_ADDITIONAL_CONTROL_3, 6, False)
 
-        # Clear bits we care about
-        numOfBits = (settingMsbNum - settingLsbNum) + 1
-        for i in range(numOfBits):
-            regvalue &= ~(1 << (settingLsbNum + i))
+    _vsel = WMBits(2, _REG_ADDITIONAL_CONTROL_1, 6, 0b11)
 
-        # Shift and set the bits from in incoming desired setting value
-        regvalue |= setting << settingLsbNum
+    @property
+    def powerSupply(self) -> float:
+        return (constrain(self._vsel, 1, 2) - 1) * 0.6 + 2.7
+    @powerSupply.setter
+    def powerSupply(self, value:float) -> None:
+        self._vsel = (constrain(value, 2.7, 3.3) - 2.7) // 0.6 * 2 + 1
 
-        # Write modified value to device
-        return self.writeRegister(registerAddress, regvalue)
+    ## GPIO
 
-    def convertDBtoSetting(self, dB:float, offset:float, stepSize:float, minDB:float, maxDB:float) -> int:
-        '''
-        Limit incoming dB values to acceptable range. Note, the minimum limit we
-        want to limit this too is actually one step lower than the minDB, because
-        that is still an acceptable dB level (it is actually "true mute").
-        Note, the PGA amp does not have a "true mute" setting available, so we
-        must check for its unique minDB of -17.25.
-        '''
+    gpioOutput = WMBit(_REG_AUDIO_INTERFACE_2, 6, False)
+    gpioOutputMode = WMBits(3, _REG_ADDITIONAL_CONTROL_4, 4, 0)
+    gpioOutputInverted = WMBit(_REG_ADDITIONAL_CONTROL_4, 7, False)
+    
+    _gpioClockDivider = WMBits(3, _REG_CLOCKING_2, 6, 0)
 
-        # Limit max. This is the same for all amps.
-        if dB > maxDB:
-            dB = maxDB
+    @property
+    def gpioClockDivider(self) -> int:
+        return self._gpioClockDivider
+    @gpioClockDivider.setter
+    def gpioClockDivider(self, value:int) -> None:
+        self._gpioClockDivider = min(value, 5)
+    
+    @property
+    def sampleRate(self) -> int:
+        return self._sampleRate
+    @sampleRate.setter
+    def sampleRate(self, value:int) -> None:
+        # MCLK = 24 MHz
+        self.pll = True # Needed for class-d amp clock
+        self.clockFractionalMode = True
+        self.clockFromPLL = True
 
-        '''
-        PGA amp doesn't have mute setting, so minDB should be limited to minDB
-        Let's check for the PGAs unique minDB (-17.25) to know we are currently
-        converting a PGA setting.
-        '''
-        if minDB == PGA_GAIN_MIN:
-            if dB < minDB:
-                dB = minDB
-        else: # Not PGA. All other amps have a mute setting below minDb
-            if dB < minDB - stepSize:
-                dB = minDB - stepSize
+        self.pllPrescaleDiv2 = True
+        self.systemClockDiv2 = True
+        self.baseClockDivider = 4.0
+        self.ampClockDivider = 16.0
 
-        '''
-        Adjust for offset
-        Offset is the number that gets us from the minimum dB option of an amp
-        up to the minimum setting value in the register.
-        '''
-        dB = dB + offset
+        if value in [8000, 12000, 16000, 24000, 32000, 48000]:
+            # SYSCLK = 12.288 MHz
+            # DCLK = 768.0kHz
+            self.pllN = 8
+            self.pllK = 0x3126E8
+            self.adcClockDivider = self.dacClockDivider = 48000 / value
+            
+        elif value in [11025, 22050, 44100]:
+            # SYSCLK = 11.2896 MHz
+            # DCLK = 705.6kHz
+            self.pllN = 7
+            self.pllK = 0x86C226
+            self.adcClockDivider = self.dacClockDivider = 44100 / value
+            
+        else:
+            raise Exception("Invalid sample rate")
 
-        '''
-        Find out how many steps we are above the minimum (at this point, our
-        minimum is "0". Note, because dB comes in as a float, the result of this
-        division (volume) can be a partial number. We will round that next.
-        '''
-        volume = dB / stepSize
-        volume = round(volume) # round to the nearest setting value.
+        self._sampleRate = value
+    
+    def __init__(self, i2c_bus:I2C, address:int = _DEFAULT_I2C_ADDR) -> None:
+        self.i2c_device = I2CDevice(i2c_bus, address)
+        self._sampleRate = None
 
-        return int(volume) & 0xff # cast from float to integer
+        self._registers = [
+            0x0097, # R0 (0x00)
+            0x0097, # R1 (0x01)
+            0x0000, # R2 (0x02)
+            0x0000, # R3 (0x03)
+            0x0000, # R4 (0x04)
+            0x0008, # F5 (0x05)
+            0x0000, # R6 (0x06)
+            0x000A, # R7 (0x07)
+            0x01C0, # R8 (0x08)
+            0x0000, # R9 (0x09)
+            0x00FF, # R10 (0x0a)
+            0x00FF, # R11 (0x0b)
+            0x0000, # R12 (0x0C) RESERVED
+            0x0000, # R13 (0x0D) RESERVED
+            0x0000, # R14 (0x0E) RESERVED
+            0x0000, # R15 (0x0F) RESERVED
+            0x0000, # R16 (0x10)
+            0x007B, # R17 (0x11)
+            0x0100, # R18 (0x12)
+            0x0032, # R19 (0x13)
+            0x0000, # R20 (0x14)
+            0x00C3, # R21 (0x15)
+            0x00C3, # R22 (0x16)
+            0x01C0, # R23 (0x17)
+            0x0000, # R24 (0x18)
+            0x0000, # R25 (0x19)
+            0x0000, # R26 (0x1A)
+            0x0000, # R27 (0x1B)
+            0x0000, # R28 (0x1C)
+            0x0000, # R29 (0x1D)
+            0x0000, # R30 (0x1E) RESERVED
+            0x0000, # R31 (0x1F) RESERVED
+            0x0100, # R32 (0x20)
+            0x0100, # R33 (0x21)
+            0x0050, # R34 (0x22)
+            0x0000, # R35 (0x23) RESERVED
+            0x0000, # R36 (0x24) RESERVED
+            0x0050, # R37 (0x25)
+            0x0000, # R38 (0x26)
+            0x0000, # R39 (0x27)
+            0x0000, # R40 (0x28)
+            0x0000, # R41 (0x29)
+            0x0040, # R42 (0x2A)
+            0x0000, # R43 (0x2B)
+            0x0000, # R44 (0x2C)
+            0x0050, # R45 (0x2D)
+            0x0050, # R46 (0x2E)
+            0x0000, # R47 (0x2F)
+            0x0002, # R48 (0x30)
+            0x0037, # R49 (0x31)
+            0x0000, # R50 (0x32) RESERVED
+            0x0080, # R51 (0x33)
+            0x0008, # R52 (0x34)
+            0x0031, # R53 (0x35)
+            0x0026, # R54 (0x36)
+            0x00e9, # R55 (0x37)
+        ]
+        for i in range(len(self._registers)):
+            self._registers[i] = bytearray(self._registers[i].to_bytes(2, 'big'))
+            self._registers[i][0] |= i << 1
+
+        self.reset()
+
+        # General setup
+        self.vref = True
+        self.vmid = VMIDSEL_PLAYBACK
+
+    # Resets all registers to their default state
+    _reset = WMBit(_REG_RESET, 7, False)
+    def reset(self) -> None:
+        self._reset = True
+        for name in dir(self):
+            if not name.startswith('_') and isinstance(getattr(self, name), (WMBit, WMBits)):
+                getattr(self, name).reset(self)
