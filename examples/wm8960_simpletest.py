@@ -44,21 +44,28 @@ import adafruit_wm8960
 import time
 import digitalio
 
-sample_rate = 44100
-
 codec = adafruit_wm8960.WM8960(board.I2C())
 
-# Set up codec as peripheral device with clock configured for desired sample rate (and 16-bit words)
-codec.configureI2S(sample_rate)
+# Setup Digital Interface
+codec.sampleRate = 44100
+codec.wordLength = 16
 
-# Enable DAC and output mixer
-codec.configureDAC()
+# Enable DAC
+codec.dacEnabled = True
+codec.dacOutputEnabled = True
+codec.stereoOutputEnabled = True
+codec.dacMute = False
 
-# Enable headphone output with OUT3 as capless buffer for headphone ground, adjust volume with dB
-codec.configureHeadphones(dB=0.0, capless=True)
+# Enable Headphone Amp with OUT3 as capless buffer for headphone ground
+codec.headphoneEnabled = True
+codec.monoOutputEnabled = True
+codec.headphoneVolumeDb = 0.0
 
+# Configure I2S Output
 audio = audiobusio.I2SOut(board.AUDIO_BCLK, board.AUDIO_SYNC, board.AUDIO_TXD)
-synth = synthio.Synthesizer(sample_rate=44100)
+
+# Setup synthio
+synth = synthio.Synthesizer(sample_rate=codec.sampleRate)
 audio.play(synth)
 
 led = digitalio.DigitalInOut(board.LED)

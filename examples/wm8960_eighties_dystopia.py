@@ -38,19 +38,24 @@ import time, random
 import digitalio
 import ulab.numpy as np
 
-sample_rate = 44100
-
 codec = adafruit_wm8960.WM8960(board.I2C())
 
-# Set up codec as peripheral device with clock configured for desired sample rate (and 16-bit words)
-codec.configureI2S(sample_rate)
+# Setup Digital Interface
+codec.sampleRate = 44100
+codec.wordLength = 16
 
-# Enable DAC and output mixer
-codec.configureDAC()
+# Enable DAC
+codec.dacEnabled = True
+codec.dacOutputEnabled = True
+codec.stereoOutputEnabled = True
+codec.dacMute = False
 
-# Enable headphone output with OUT3 as capless buffer for headphone ground, adjust volume with dB
-codec.configureHeadphones(dB=0.0, capless=True)
+# Enable Headphone Amp with OUT3 as capless buffer for headphone ground
+codec.headphoneEnabled = True
+codec.monoOutputEnabled = True
+codec.headphoneVolumeDb = 0.0
 
+# Configure I2S Output
 audio = audiobusio.I2SOut(board.AUDIO_BCLK, board.AUDIO_SYNC, board.AUDIO_TXD)
 
 led = digitalio.DigitalInOut(board.LED)
@@ -63,8 +68,8 @@ num_voices = 5       # how many voices for each note
 lpf_basef = 500      # filter lowest frequency
 lpf_resonance = 1.5  # filter q
 
-mixer = audiomixer.Mixer(channel_count=2, sample_rate=44100, buffer_size=8192)
-synth = synthio.Synthesizer(channel_count=2, sample_rate=44100)
+mixer = audiomixer.Mixer(channel_count=2, sample_rate=codec.sampleRate, buffer_size=8192)
+synth = synthio.Synthesizer(channel_count=2, sample_rate=codec.sampleRate)
 audio.play(mixer)
 mixer.voice[0].play(synth)
 mixer.voice[0].level = 0.8
