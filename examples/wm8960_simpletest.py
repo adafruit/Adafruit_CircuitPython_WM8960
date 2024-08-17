@@ -47,25 +47,25 @@ import digitalio
 codec = adafruit_wm8960.WM8960(board.I2C())
 
 # Setup Digital Interface
-codec.sampleRate = 44100
-codec.wordLength = 16
+codec.sample_rate = 44100
+codec.bit_depth = 16
 
 # Enable DAC
-codec.dacEnabled = True
-codec.dacOutputEnabled = True
-codec.stereoOutputEnabled = True
-codec.dacMute = False
+codec.dac = True
+codec.dac_output = True
+codec.output = True
+codec.dac_mute = False
 
 # Enable Headphone Amp with OUT3 as capless buffer for headphone ground
-codec.headphoneEnabled = True
-codec.monoOutputEnabled = True
-codec.headphoneVolumeDb = 0.0
+codec.headphone = True
+codec.mono_output = True
+codec.headphone_volume = 0.0
 
 # Configure I2S Output
 audio = audiobusio.I2SOut(board.AUDIO_BCLK, board.AUDIO_SYNC, board.AUDIO_TXD)
 
 # Setup synthio
-synth = synthio.Synthesizer(sample_rate=codec.sampleRate)
+synth = synthio.Synthesizer(sample_rate=codec.sample_rate)
 audio.play(synth)
 
 led = digitalio.DigitalInOut(board.LED)
