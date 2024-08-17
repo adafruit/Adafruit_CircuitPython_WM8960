@@ -130,44 +130,44 @@ _SYSCLK_DIV_BY_1 = const(0)
 _SYSCLK_DIV_BY_2 = const(2)
 
 # Gain/Level mins, maxes, offsets and step-sizes
-_MIC_GAIN_MIN = -17.25
-_MIC_GAIN_MAX = 30.00
+MIC_GAIN_MIN = -17.25
+MIC_GAIN_MAX = 30.00
 
-_ADC_VOLUME_MIN = -97.00
-_ADC_VOLUME_MAX = 30.00
+ADC_VOLUME_MIN = -97.00
+ADC_VOLUME_MAX = 30.00
 
-_DAC_VOLUME_MIN = -127.00
-_DAC_VOLUME_MAX = 0.00
+DAC_VOLUME_MIN = -127.00
+DAC_VOLUME_MAX = 0.00
 
-_ALC_TARGET_MIN = -22.50
-_ALC_TARGET_MAX = -1.50
+ALC_TARGET_MIN = -22.50
+ALC_TARGET_MAX = -1.50
 
-_ALC_MAX_GAIN_MIN = -12.00
-_ALC_MAX_GAIN_MAX = 30.00
+ALC_MAX_GAIN_MIN = -12.00
+ALC_MAX_GAIN_MAX = 30.00
 
-_ALC_MIN_GAIN_MIN = -17.25
-_ALC_MIN_GAIN_MAX = 24.75
+ALC_MIN_GAIN_MIN = -17.25
+ALC_MIN_GAIN_MAX = 24.75
 
-_GATE_THRESHOLD_MIN = -76.50
-_GATE_THRESHOLD_MAX = -30.00
+GATE_THRESHOLD_MIN = -76.50
+GATE_THRESHOLD_MAX = -30.00
 
-_OUTPUT_VOLUME_MIN = -21.00
-_OUTPUT_VOLUME_MAX = 0.00
+OUTPUT_VOLUME_MIN = -21.00
+OUTPUT_VOLUME_MAX = 0.00
 
-_AMP_VOLUME_MIN = -73.00
-_AMP_VOLUME_MAX = 6.00
+AMP_VOLUME_MIN = -73.00
+AMP_VOLUME_MAX = 6.00
 
 # ALC Time mapping
 _ALC_ATTACK_MAX = const(10)
-_ALC_ATTACK_TIME_MIN = 0.006
-_ALC_ATTACK_TIME_MAX = 6.140
+ALC_ATTACK_TIME_MIN = 0.006
+ALC_ATTACK_TIME_MAX = 6.140
 
 _ALC_DECAY_MAX = const(10)
-_ALC_DECAY_TIME_MIN = 0.024
-_ALC_DECAY_TIME_MAX = 24.580
+ALC_DECAY_TIME_MIN = 0.024
+ALC_DECAY_TIME_MAX = 24.580
 
-_ALC_HOLD_TIME_MIN = 0.00267
-_ALC_HOLD_TIME_MAX = 43.691
+ALC_HOLD_TIME_MIN = 0.00267
+ALC_HOLD_TIME_MAX = 43.691
 
 # Speaker Boost Gains (DC and AC)
 SPEAKER_BOOST_GAIN_0DB = 0
@@ -411,18 +411,18 @@ class WM8960:
 
     @property
     def left_mic_volume(self) -> float:
-        return map_range(self._left_mic_volume, 0, 63, _MIC_GAIN_MIN, _MIC_GAIN_MAX)
+        return map_range(self._left_mic_volume, 0, 63, MIC_GAIN_MIN, MIC_GAIN_MAX)
     @left_mic_volume.setter
     def left_mic_volume(self, value:float) -> None:
-        self._left_mic_volume = round(map_range(value, _MIC_GAIN_MIN, _MIC_GAIN_MAX, 0, 63))
+        self._left_mic_volume = round(map_range(value, MIC_GAIN_MIN, MIC_GAIN_MAX, 0, 63))
         self._left_mic_volume_set = True
     
     @property
     def right_mic_volume(self) -> float:
-        return map_range(self._right_mic_volume, 0, 63, _MIC_GAIN_MIN, _MIC_GAIN_MAX)
+        return map_range(self._right_mic_volume, 0, 63, MIC_GAIN_MIN, MIC_GAIN_MAX)
     @right_mic_volume.setter
     def right_mic_volume(self, value:float) -> None:
-        self._right_mic_volume = round(map_range(value, _MIC_GAIN_MIN, _MIC_GAIN_MAX, 0, 63))
+        self._right_mic_volume = round(map_range(value, MIC_GAIN_MIN, MIC_GAIN_MAX, 0, 63))
         self._right_mic_volume_set = True
     
     @property
@@ -430,7 +430,7 @@ class WM8960:
         return max(self.left_mic_volume, self.right_mic_volume)
     @mic_volume.setter
     def mic_volume(self, value:float) -> None:
-        self._left_mic_volume = self._right_mic_volume = round(map_range(value, _MIC_GAIN_MIN, _MIC_GAIN_MAX, 0, 63))
+        self._left_mic_volume = self._right_mic_volume = round(map_range(value, MIC_GAIN_MIN, MIC_GAIN_MAX, 0, 63))
         self._left_mic_volume_set = self._right_mic_volume_set = True
 
     ## Zero Cross
@@ -519,10 +519,10 @@ class WM8960:
 
     @property
     def left_adc_volume(self) -> float:
-        return map_range(max(self._left_adc_volume, 1), 1, 255, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX)
+        return map_range(max(self._left_adc_volume, 1), 1, 255, ADC_VOLUME_MIN, ADC_VOLUME_MAX)
     @left_adc_volume.setter
     def left_adc_volume(self, value:float) -> None:
-        self._left_adc_volume = round(map_range(value, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX, 0, 254) + 1.0)
+        self._left_adc_volume = round(map_range(value, ADC_VOLUME_MIN, ADC_VOLUME_MAX, 0, 254) + 1.0)
         self._left_adc_volume_set = True
 
     _right_adc_volume = WOBits(8, _REG_RIGHT_ADC_VOLUME, 0)
@@ -530,10 +530,10 @@ class WM8960:
 
     @property
     def right_adc_volume(self) -> float:
-        return map_range(max(self._right_adc_volume, 1), 1, 255, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX)
+        return map_range(max(self._right_adc_volume, 1), 1, 255, ADC_VOLUME_MIN, ADC_VOLUME_MAX)
     @right_adc_volume.setter
     def right_adc_volume(self, value:float) -> None:
-        self._right_adc_volume = round(map_range(value, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX, 0, 254) + 1.0)
+        self._right_adc_volume = round(map_range(value, ADC_VOLUME_MIN, ADC_VOLUME_MAX, 0, 254) + 1.0)
         self._right_adc_volume_set = True
 
     @property
@@ -541,7 +541,7 @@ class WM8960:
         return max(self.left_adc_volume, self.right_adc_volume)
     @adc_volume.setter
     def adc_volume(self, value:float) -> None:
-        self._left_adc_volume = self._right_adc_volume = round(map_range(value, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX, 0, 254) + 1.0)
+        self._left_adc_volume = self._right_adc_volume = round(map_range(value, ADC_VOLUME_MIN, ADC_VOLUME_MAX, 0, 254) + 1.0)
         self._left_adc_volume_set = self._right_adc_volume_set = True
 
     # ALC
@@ -560,46 +560,46 @@ class WM8960:
 
     @property
     def alc_target(self) -> float:
-        return map_range(self._alc_target, 0, 15, _ALC_TARGET_MIN, _ALC_TARGET_MAX)
+        return map_range(self._alc_target, 0, 15, ALC_TARGET_MIN, ALC_TARGET_MAX)
     @alc_target.setter
     def alc_target(self, value:float) -> None:
-        self._alc_target = round(map_range(value, _ALC_TARGET_MIN, _ALC_TARGET_MAX, 0, 15))
+        self._alc_target = round(map_range(value, ALC_TARGET_MIN, ALC_TARGET_MAX, 0, 15))
 
     _alc_max_gain = WOBits(3, _REG_ALC1, 4)
 
     @property
     def alc_max_gain(self) -> float:
-        return map_range(self._alc_max_gain, 0, 7, _ALC_MAX_GAIN_MIN, _ALC_MAX_GAIN_MAX)
+        return map_range(self._alc_max_gain, 0, 7, ALC_MAX_GAIN_MIN, ALC_MAX_GAIN_MAX)
     @alc_max_gain.setter
     def alc_max_gain(self, value:float) -> None:
-        self._alc_max_gain = round(map_range(value, _ALC_MAX_GAIN_MIN, _ALC_MAX_GAIN_MAX, 0, 7))
+        self._alc_max_gain = round(map_range(value, ALC_MAX_GAIN_MIN, ALC_MAX_GAIN_MAX, 0, 7))
 
     _alc_min_gain = WOBits(3, _REG_ALC2, 4)
 
     @property
     def alc_min_gain(self) -> float:
-        return map_range(self._alc_min_gain, 0, 7, _ALC_MIN_GAIN_MIN, _ALC_MIN_GAIN_MAX)
+        return map_range(self._alc_min_gain, 0, 7, ALC_MIN_GAIN_MIN, ALC_MIN_GAIN_MAX)
     @alc_min_gain.setter
     def alc_min_gain(self, value:float) -> None:
-        self._alc_min_gain = round(map_range(value, _ALC_MIN_GAIN_MIN, _ALC_MIN_GAIN_MAX, 0, 7))
+        self._alc_min_gain = round(map_range(value, ALC_MIN_GAIN_MIN, ALC_MIN_GAIN_MAX, 0, 7))
 
     _alc_attack = WOBits(4, _REG_ALC3, 0)
 
     @property
     def alc_attack_time(self) -> float:
-        return _ALC_ATTACK_TIME_MIN * pow(2, self._alc_attack)
+        return ALC_ATTACK_TIME_MIN * pow(2, self._alc_attack)
     @alc_attack_time.setter
     def alc_attack_time(self, value:float) -> None:
-        self._alc_attack = min(round(math.log2((constrain(value, _ALC_ATTACK_TIME_MIN, _ALC_ATTACK_TIME_MAX) - _ALC_ATTACK_TIME_MIN) / _ALC_ATTACK_TIME_MIN)), _ALC_ATTACK_MAX)
+        self._alc_attack = min(round(math.log2((constrain(value, ALC_ATTACK_TIME_MIN, ALC_ATTACK_TIME_MAX) - ALC_ATTACK_TIME_MIN) / ALC_ATTACK_TIME_MIN)), _ALC_ATTACK_MAX)
 
     _alc_decay = WOBits(4, _REG_ALC3, 4)
 
     @property
     def alc_decay_time(self) -> float:
-        return _ALC_DECAY_TIME_MIN * pow(2, self._alc_decay)
+        return ALC_DECAY_TIME_MIN * pow(2, self._alc_decay)
     @alc_decay_time.setter
     def alc_decay_time(self, value:float) -> None:
-        self._alc_decay = min(round(math.log2((constrain(value, _ALC_DECAY_TIME_MIN, _ALC_DECAY_TIME_MAX) - _ALC_DECAY_TIME_MIN) / _ALC_DECAY_TIME_MIN)), _ALC_DECAY_MAX)
+        self._alc_decay = min(round(math.log2((constrain(value, ALC_DECAY_TIME_MIN, ALC_DECAY_TIME_MAX) - ALC_DECAY_TIME_MIN) / ALC_DECAY_TIME_MIN)), _ALC_DECAY_MAX)
 
     _alc_hold = WOBits(4, _REG_ALC2, 0)
 
@@ -607,13 +607,13 @@ class WM8960:
     def alc_hold_time(self) -> float:
         value = self._alc_hold
         if value == 0: return 0.0
-        return _ALC_HOLD_TIME_MIN * pow(2, self._alc_hold - 1)
+        return ALC_HOLD_TIME_MIN * pow(2, self._alc_hold - 1)
     @alc_hold_time.setter
     def alc_hold_time(self, value:float) -> None:
         if value <= 0.0:
             self._alc_hold = 0
         else:
-            self._alc_hold = round(math.log2((constrain(value, _ALC_HOLD_TIME_MIN, _ALC_HOLD_TIME_MAX) - _ALC_HOLD_TIME_MIN) / _ALC_HOLD_TIME_MIN) + 1.0)
+            self._alc_hold = round(math.log2((constrain(value, ALC_HOLD_TIME_MIN, ALC_HOLD_TIME_MAX) - ALC_HOLD_TIME_MIN) / ALC_HOLD_TIME_MIN) + 1.0)
 
     alc_limiter = WOBit(_REG_ALC3, 8)
 
@@ -625,10 +625,10 @@ class WM8960:
 
     @property
     def noise_gate_threshold(self) -> float:
-        return map_range(self._noise_gate_threshold, 0, 31, _GATE_THRESHOLD_MIN, _GATE_THRESHOLD_MAX)
+        return map_range(self._noise_gate_threshold, 0, 31, GATE_THRESHOLD_MIN, GATE_THRESHOLD_MAX)
     @noise_gate_threshold.setter
     def noise_gate_threshold(self, value:float) -> None:
-        self._noise_gate_threshold = round(map_range(value, _GATE_THRESHOLD_MIN, _GATE_THRESHOLD_MAX, 0, 31))
+        self._noise_gate_threshold = round(map_range(value, GATE_THRESHOLD_MIN, GATE_THRESHOLD_MAX, 0, 31))
 
     # DAC
 
@@ -647,10 +647,10 @@ class WM8960:
 
     @property
     def left_dac_volume(self) -> float:
-        return map_range(max(self._left_dac_volume, 1), 1, 255, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX)
+        return map_range(max(self._left_dac_volume, 1), 1, 255, DAC_VOLUME_MIN, DAC_VOLUME_MAX)
     @left_dac_volume.setter
     def left_dac_volume(self, value:float) -> None:
-        self._left_dac_volume = round(map_range(value, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX, 0, 254) + 1.0)
+        self._left_dac_volume = round(map_range(value, DAC_VOLUME_MIN, DAC_VOLUME_MAX, 0, 254) + 1.0)
         self._left_dac_volume_set = True
 
     _right_dac_volume = WOBits(8, _REG_RIGHT_DAC_VOLUME, 0)
@@ -658,10 +658,10 @@ class WM8960:
 
     @property
     def right_dac_volume(self) -> float:
-        return map_range(max(self._right_dac_volume, 1), 1, 255, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX)
+        return map_range(max(self._right_dac_volume, 1), 1, 255, DAC_VOLUME_MIN, DAC_VOLUME_MAX)
     @right_dac_volume.setter
     def right_dac_volume(self, value:float) -> None:
-        self._right_dac_volume = round(map_range(value, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX, 0, 254) + 1.0)
+        self._right_dac_volume = round(map_range(value, DAC_VOLUME_MIN, DAC_VOLUME_MAX, 0, 254) + 1.0)
         self._right_dac_volume_set = True
 
     @property
@@ -669,7 +669,7 @@ class WM8960:
         return max(self.left_dac_volume, self.right_dac_volume)
     @dac_volume.setter
     def dac_volume(self, value:float) -> None:
-        self._left_dac_volume = self._right_dac_volume = round(map_range(value, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX, 0, 254) + 1.0)
+        self._left_dac_volume = self._right_dac_volume = round(map_range(value, DAC_VOLUME_MIN, DAC_VOLUME_MAX, 0, 254) + 1.0)
         self._left_dac_volume_set = self._right_dac_volume_set = True
 
     dac_mute = WOBit(_REG_ADC_DAC_CTRL_1, 3)
@@ -724,26 +724,26 @@ class WM8960:
 
     @property
     def left_input3_output_volume(self) -> float:
-        return map_range(self._left_input3_output_volume, 0, 7, _OUTPUT_VOLUME_MAX, _OUTPUT_VOLUME_MIN)
+        return map_range(self._left_input3_output_volume, 0, 7, OUTPUT_VOLUME_MAX, OUTPUT_VOLUME_MIN)
     @left_input3_output_volume.setter
     def left_input3_output_volume(self, value:float) -> None:
-        self._left_input3_output_volume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+        self._left_input3_output_volume = round(map_range(value, OUTPUT_VOLUME_MIN, OUTPUT_VOLUME_MAX, 7, 0))
 
     _right_input3_output_volume = WOBits(3, _REG_RIGHT_OUT_MIX, 4)
 
     @property
     def right_input3_output_volume(self) -> float:
-        return map_range(self._right_input3_output_volume, 0, 7, _OUTPUT_VOLUME_MAX, _OUTPUT_VOLUME_MIN)
+        return map_range(self._right_input3_output_volume, 0, 7, OUTPUT_VOLUME_MAX, OUTPUT_VOLUME_MIN)
     @right_input3_output_volume.setter
     def right_input3_output_volume(self, value:float) -> None:
-        self._right_input3_output_volume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+        self._right_input3_output_volume = round(map_range(value, OUTPUT_VOLUME_MIN, OUTPUT_VOLUME_MAX, 7, 0))
 
     @property
     def input3_output_volume(self) -> float:
         return max(self.left_input3_output_volume, self.right_input3_output_volume)
     @input3_output_volume.setter
     def input3_output_volume(self, value:float) -> None:
-        self._left_input3_output_volume = self._right_input3_output_volume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+        self._left_input3_output_volume = self._right_input3_output_volume = round(map_range(value, OUTPUT_VOLUME_MIN, OUTPUT_VOLUME_MAX, 7, 0))
 
     ## MIC Boost Mixer Output
 
@@ -758,26 +758,26 @@ class WM8960:
 
     @property
     def left_mic_boost_output_volume(self) -> float:
-        return map_range(self._left_mic_boost_output_volume, 0, 7, _OUTPUT_VOLUME_MAX, _OUTPUT_VOLUME_MIN)
+        return map_range(self._left_mic_boost_output_volume, 0, 7, OUTPUT_VOLUME_MAX, OUTPUT_VOLUME_MIN)
     @left_mic_boost_output_volume.setter
     def left_mic_boost_output_volume(self, value:float) -> None:
-        self._left_mic_boost_output_volume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+        self._left_mic_boost_output_volume = round(map_range(value, OUTPUT_VOLUME_MIN, OUTPUT_VOLUME_MAX, 7, 0))
 
     _right_mic_boost_output_volume = WOBits(3, _REG_BYPASS_2, 4)
 
     @property
     def right_mic_boost_output_volume(self) -> float:
-        return map_range(self._right_mic_boost_output_volume, 0, 7, _OUTPUT_VOLUME_MAX, _OUTPUT_VOLUME_MIN)
+        return map_range(self._right_mic_boost_output_volume, 0, 7, OUTPUT_VOLUME_MAX, OUTPUT_VOLUME_MIN)
     @right_mic_boost_output_volume.setter
     def right_mic_boost_output_volume(self, value:float) -> None:
-        self._right_mic_boost_output_volume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+        self._right_mic_boost_output_volume = round(map_range(value, OUTPUT_VOLUME_MIN, OUTPUT_VOLUME_MAX, 7, 0))
 
     @property
     def mic_boost_output_volume(self) -> float:
         return max(self.left_mic_boost_output_volume, self.right_mic_boost_output_volume)
     @mic_boost_output_volume.setter
     def mic_boost_output_volume(self, value:float) -> None:
-        self._left_mic_boost_output_volume = self._right_mic_boost_output_volume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+        self._left_mic_boost_output_volume = self._right_mic_boost_output_volume = round(map_range(value, OUTPUT_VOLUME_MIN, OUTPUT_VOLUME_MAX, 7, 0))
 
     ## Mono Output
 
@@ -818,10 +818,10 @@ class WM8960:
 
     @property
     def left_headphone_volume(self) -> float:
-        return map_range(max(self._left_headphone_volume, 48), 48, 127, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX)
+        return map_range(max(self._left_headphone_volume, 48), 48, 127, AMP_VOLUME_MIN, AMP_VOLUME_MAX)
     @left_headphone_volume.setter
     def left_headphone_volume(self, value:float) -> None:
-        self._left_headphone_volume = round(map_range(value, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX, 48, 127))
+        self._left_headphone_volume = round(map_range(value, AMP_VOLUME_MIN, AMP_VOLUME_MAX, 48, 127))
         self._left_headphone_volume_set = True
 
     _right_headphone_volume = WOBits(7, _REG_ROUT1_VOLUME, 0)
@@ -829,10 +829,10 @@ class WM8960:
 
     @property
     def right_headphone_volume(self) -> float:
-        return map_range(max(self._right_headphone_volume, 48), 48, 255, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX)
+        return map_range(max(self._right_headphone_volume, 48), 48, 255, AMP_VOLUME_MIN, AMP_VOLUME_MAX)
     @right_headphone_volume.setter
     def right_headphone_volume(self, value:float) -> None:
-        self._right_headphone_volume = round(map_range(value, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX, 48, 127))
+        self._right_headphone_volume = round(map_range(value, AMP_VOLUME_MIN, AMP_VOLUME_MAX, 48, 127))
         self._right_headphone_volume_set = True
 
     @property
@@ -840,7 +840,7 @@ class WM8960:
         return max(self.left_headphone_volume, self.right_headphone_volume)
     @headphone_volume.setter
     def headphone_volume(self, value:float) -> None:
-        self._left_headphone_volume = self._right_headphone_volume = round(map_range(value, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX, 48, 127) + 1.0)
+        self._left_headphone_volume = self._right_headphone_volume = round(map_range(value, AMP_VOLUME_MIN, AMP_VOLUME_MAX, 48, 127) + 1.0)
         self._left_headphone_volume_set = self._right_headphone_volume_set = True
 
     left_headphone_zero_cross = WOBit(_REG_LOUT1_VOLUME, 7)
@@ -887,10 +887,10 @@ class WM8960:
 
     @property
     def left_speaker_volume(self) -> float:
-        return map_range(max(self._left_speaker_volume, 48), 48, 127, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX)
+        return map_range(max(self._left_speaker_volume, 48), 48, 127, AMP_VOLUME_MIN, AMP_VOLUME_MAX)
     @left_speaker_volume.setter
     def left_speaker_volume(self, value:float) -> None:
-        self._left_speaker_volume = round(map_range(value, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX, 48, 127))
+        self._left_speaker_volume = round(map_range(value, AMP_VOLUME_MIN, AMP_VOLUME_MAX, 48, 127))
         self._left_speaker_set = True
 
     _right_speaker_volume = WOBits(7, _REG_ROUT2_VOLUME, 0)
@@ -898,10 +898,10 @@ class WM8960:
 
     @property
     def right_speaker_volume(self) -> float:
-        return map_range(max(self._right_speaker_volume, 48), 48, 127, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX)
+        return map_range(max(self._right_speaker_volume, 48), 48, 127, AMP_VOLUME_MIN, AMP_VOLUME_MAX)
     @right_speaker_volume.setter
     def right_speaker_volume(self, value:float) -> None:
-        self._right_speaker_volume = round(map_range(value, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX, 48, 127))
+        self._right_speaker_volume = round(map_range(value, AMP_VOLUME_MIN, AMP_VOLUME_MAX, 48, 127))
         self._right_speaker_volume_set = True
 
     @property
@@ -909,7 +909,7 @@ class WM8960:
         return max(self.left_speaker_volume, self.right_speaker_volume)
     @speaker_volume.setter
     def speaker_volume(self, value:float) -> None:
-        self._left_speaker_volume = self._right_speaker_volume = round(map_range(value, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX, 48, 127))
+        self._left_speaker_volume = self._right_speaker_volume = round(map_range(value, AMP_VOLUME_MIN, AMP_VOLUME_MAX, 48, 127))
         self._left_speaker_volume_set = self._right_speaker_volume_set = True
 
     left_speaker_zero_cross = WOBit(_REG_LOUT2_VOLUME, 7)
