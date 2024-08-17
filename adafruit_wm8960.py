@@ -222,7 +222,7 @@ _ADCDACDIV = [
     6.0
 ]
 
-class WMBit:
+class WOBit:
 
     def __init__(
         self,
@@ -257,7 +257,7 @@ class WMBit:
         with obj.i2c_device as i2c:
             i2c.write(obj._registers[self.register_address])
 
-class WMBits:
+class WOBits:
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
@@ -308,10 +308,10 @@ class WM8960:
 
     # Power
 
-    vref = WMBit(_REG_PWR_MGMT_1, 6)
+    vref = WOBit(_REG_PWR_MGMT_1, 6)
 
-    analogInputLeftEnabled = WMBit(_REG_PWR_MGMT_1, 5)
-    analogInputRightEnabled = WMBit(_REG_PWR_MGMT_1, 4)
+    analogInputLeftEnabled = WOBit(_REG_PWR_MGMT_1, 5)
+    analogInputRightEnabled = WOBit(_REG_PWR_MGMT_1, 4)
 
     @property
     def analogInputEnabled(self) -> bool:
@@ -324,8 +324,8 @@ class WM8960:
     
     ## PWR_MGMT
 
-    pgaLeftEnabled = WMBit(_REG_PWR_MGMT_3, 5)
-    pgaRightEnabled = WMBit(_REG_PWR_MGMT_3, 4)
+    pgaLeftEnabled = WOBit(_REG_PWR_MGMT_3, 5)
+    pgaRightEnabled = WOBit(_REG_PWR_MGMT_3, 4)
 
     @property
     def pgaEnabled(self) -> bool:
@@ -336,13 +336,13 @@ class WM8960:
 
     ## SIGNAL_PATH
 
-    _pgaInput1Left = WMBit(_REG_ADCL_SIGNAL_PATH, 8)
-    _pgaInput2Left = WMBit(_REG_ADCL_SIGNAL_PATH, 6)
-    _pgaInput3Left = WMBit(_REG_ADCL_SIGNAL_PATH, 7)
+    _pgaInput1Left = WOBit(_REG_ADCL_SIGNAL_PATH, 8)
+    _pgaInput2Left = WOBit(_REG_ADCL_SIGNAL_PATH, 6)
+    _pgaInput3Left = WOBit(_REG_ADCL_SIGNAL_PATH, 7)
 
-    _pgaInput1Right = WMBit(_REG_ADCR_SIGNAL_PATH, 8)
-    _pgaInput2Right = WMBit(_REG_ADCR_SIGNAL_PATH, 6)
-    _pgaInput3Right = WMBit(_REG_ADCR_SIGNAL_PATH, 7)
+    _pgaInput1Right = WOBit(_REG_ADCR_SIGNAL_PATH, 8)
+    _pgaInput2Right = WOBit(_REG_ADCR_SIGNAL_PATH, 6)
+    _pgaInput3Right = WOBit(_REG_ADCR_SIGNAL_PATH, 7)
 
     @property
     def pgaNonInvSignalLeft(self) -> int:
@@ -380,8 +380,8 @@ class WM8960:
 
     ## Boost
 
-    pgaLeftBoostEnabled = WMBit(_REG_ADCL_SIGNAL_PATH, 3)
-    pgaRightBoostEnabled = WMBit(_REG_ADCR_SIGNAL_PATH, 3)
+    pgaLeftBoostEnabled = WOBit(_REG_ADCL_SIGNAL_PATH, 3)
+    pgaRightBoostEnabled = WOBit(_REG_ADCR_SIGNAL_PATH, 3)
 
     @property
     def pgaBoostEnabled(self) -> None:
@@ -390,8 +390,8 @@ class WM8960:
     def pgaBoostEnabled(self, value:int) -> None:
         self.pgaLeftBoostEnabled = self.pgaRightBoostEnabled = value
 
-    pgaBoostGainLeft = WMBits(2, _REG_ADCL_SIGNAL_PATH, 4)
-    pgaBoostGainRight = WMBits(2, _REG_ADCR_SIGNAL_PATH, 4)
+    pgaBoostGainLeft = WOBits(2, _REG_ADCL_SIGNAL_PATH, 4)
+    pgaBoostGainRight = WOBits(2, _REG_ADCR_SIGNAL_PATH, 4)
 
     @property
     def pgaBoostGain(self) -> None:
@@ -402,11 +402,11 @@ class WM8960:
 
     ## Volume
 
-    _pgaLeftVolume = WMBits(6, _REG_LEFT_INPUT_VOLUME, 0)
-    _pgaLeftVolumeSet = WMBit(_REG_LEFT_INPUT_VOLUME, 8)
+    _pgaLeftVolume = WOBits(6, _REG_LEFT_INPUT_VOLUME, 0)
+    _pgaLeftVolumeSet = WOBit(_REG_LEFT_INPUT_VOLUME, 8)
 
-    _pgaRightVolume = WMBits(6, _REG_RIGHT_INPUT_VOLUME, 0)
-    _pgaRightVolumeSet = WMBit(_REG_RIGHT_INPUT_VOLUME, 8)
+    _pgaRightVolume = WOBits(6, _REG_RIGHT_INPUT_VOLUME, 0)
+    _pgaRightVolumeSet = WOBit(_REG_RIGHT_INPUT_VOLUME, 8)
 
     @property
     def pgaLeftVolume(self) -> int:
@@ -454,8 +454,8 @@ class WM8960:
 
     ## Zero Cross
 
-    pgaLeftZeroCross = WMBit(_REG_LEFT_INPUT_VOLUME, 6)
-    pgaRightZeroCross = WMBit(_REG_RIGHT_INPUT_VOLUME, 6)
+    pgaLeftZeroCross = WOBit(_REG_LEFT_INPUT_VOLUME, 6)
+    pgaRightZeroCross = WOBit(_REG_RIGHT_INPUT_VOLUME, 6)
 
     @property
     def pgaZeroCross(self) -> bool:
@@ -466,8 +466,8 @@ class WM8960:
 
     ## Mute
 
-    _pgaLeftMute = WMBit(_REG_LEFT_INPUT_VOLUME, 7)
-    _pgaRightMute = WMBit(_REG_RIGHT_INPUT_VOLUME, 7)
+    _pgaLeftMute = WOBit(_REG_LEFT_INPUT_VOLUME, 7)
+    _pgaRightMute = WOBit(_REG_RIGHT_INPUT_VOLUME, 7)
 
     @property
     def pgaLeftMute(self) -> bool:
@@ -494,8 +494,8 @@ class WM8960:
 
     # Boost Mixer
 
-    input2LeftBoost = WMBits(3, _REG_INPUT_BOOST_MIXER_1, 1)
-    input2RightBoost = WMBits(3, _REG_INPUT_BOOST_MIXER_2, 1)
+    input2LeftBoost = WOBits(3, _REG_INPUT_BOOST_MIXER_1, 1)
+    input2RightBoost = WOBits(3, _REG_INPUT_BOOST_MIXER_2, 1)
 
     @property
     def input2Boost(self) -> int:
@@ -504,13 +504,13 @@ class WM8960:
     def input2Boost(self, value:int) -> None:
         self.input2LeftBoost = self.input2RightBoost = value
 
-    input3LeftBoost = WMBits(3, _REG_INPUT_BOOST_MIXER_1, 4)
-    input3RightBoost = WMBits(3, _REG_INPUT_BOOST_MIXER_2, 4)
+    input3LeftBoost = WOBits(3, _REG_INPUT_BOOST_MIXER_1, 4)
+    input3RightBoost = WOBits(3, _REG_INPUT_BOOST_MIXER_2, 4)
 
     # Mic Bias
 
-    micBias = WMBit(_REG_PWR_MGMT_1, 1)
-    micBiasVoltage = WMBit(_REG_ADDITIONAL_CONTROL_4, 0)
+    micBias = WOBit(_REG_PWR_MGMT_1, 1)
+    micBiasVoltage = WOBit(_REG_ADDITIONAL_CONTROL_4, 0)
 
     @property
     def input3Boost(self) -> int:
@@ -521,8 +521,8 @@ class WM8960:
 
     # ADC
 
-    adcLeftEnabled = WMBit(_REG_PWR_MGMT_1, 3)
-    adcRightEnabled = WMBit(_REG_PWR_MGMT_1, 2)
+    adcLeftEnabled = WOBit(_REG_PWR_MGMT_1, 3)
+    adcRightEnabled = WOBit(_REG_PWR_MGMT_1, 2)
 
     @property
     def adcEnabled(self) -> bool:
@@ -533,8 +533,8 @@ class WM8960:
     
     ## Volume
 
-    _adcLeftVolume = WMBits(8, _REG_LEFT_ADC_VOLUME, 0)
-    _adcLeftVolumeSet = WMBit(_REG_LEFT_ADC_VOLUME, 8)
+    _adcLeftVolume = WOBits(8, _REG_LEFT_ADC_VOLUME, 0)
+    _adcLeftVolumeSet = WOBit(_REG_LEFT_ADC_VOLUME, 8)
 
     @property
     def adcLeftVolume(self) -> int:
@@ -551,8 +551,8 @@ class WM8960:
     def adcLeftVolumeDb(self, value:float) -> None:
         self.adcLeftVolume = round(map_range(value, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX, 0, 254) + 1.0)
 
-    _adcRightVolume = WMBits(8, _REG_RIGHT_ADC_VOLUME, 0)
-    _adcRightVolumeSet = WMBit(_REG_RIGHT_ADC_VOLUME, 8)
+    _adcRightVolume = WOBits(8, _REG_RIGHT_ADC_VOLUME, 0)
+    _adcRightVolumeSet = WOBit(_REG_RIGHT_ADC_VOLUME, 8)
 
     @property
     def adcRightVolume(self) -> int:
@@ -585,8 +585,8 @@ class WM8960:
 
     # ALC
 
-    alcLeftEnabled = WMBit(_REG_ALC1, 7)
-    alcRightEnabled = WMBit(_REG_ALC1, 8)
+    alcLeftEnabled = WOBit(_REG_ALC1, 7)
+    alcRightEnabled = WOBit(_REG_ALC1, 8)
 
     @property
     def alcEnabled(self) -> bool:
@@ -595,7 +595,7 @@ class WM8960:
     def alcEnabled(self, value:bool) -> None:
         self.alcLeftEnabled = self.alcRightEnabled = value
 
-    alcTarget = WMBits(4, _REG_ALC1, 0)
+    alcTarget = WOBits(4, _REG_ALC1, 0)
 
     @property
     def alcTargetDb(self) -> float:
@@ -604,7 +604,7 @@ class WM8960:
     def alcTargetDb(self, value:float) -> None:
         self.alcTarget = round(map_range(value, _ALC_TARGET_MIN, _ALC_TARGET_MAX, 0, 15))
 
-    alcMaxGain = WMBits(3, _REG_ALC1, 4)
+    alcMaxGain = WOBits(3, _REG_ALC1, 4)
 
     @property
     def alcMaxGainDb(self) -> float:
@@ -613,7 +613,7 @@ class WM8960:
     def alcMaxGainDb(self, value:float) -> None:
         self.alcMaxGain = round(map_range(value, _ALC_MAX_GAIN_MIN, _ALC_MAX_GAIN_MAX, 0, 7))
 
-    alcMinGain = WMBits(3, _REG_ALC2, 4)
+    alcMinGain = WOBits(3, _REG_ALC2, 4)
 
     @property
     def alcMinGainDb(self) -> float:
@@ -622,7 +622,7 @@ class WM8960:
     def alcMinGainDb(self, value:float) -> None:
         self.alcMinGain = round(map_range(value, _ALC_MIN_GAIN_MIN, _ALC_MIN_GAIN_MAX, 0, 7))
 
-    _alcAttack = WMBits(4, _REG_ALC3, 0)
+    _alcAttack = WOBits(4, _REG_ALC3, 0)
 
     @property
     def alcAttack(self) -> int:
@@ -638,7 +638,7 @@ class WM8960:
     def alcAttackTime(self, value:float) -> None:
         self.alcAttack = round(math.log2((constrain(value, _ALC_ATTACK_TIME_MIN, _ALC_ATTACK_TIME_MAX) - _ALC_ATTACK_TIME_MIN) / _ALC_ATTACK_TIME_MIN))
 
-    _alcDecay = WMBits(4, _REG_ALC3, 4)
+    _alcDecay = WOBits(4, _REG_ALC3, 4)
 
     @property
     def alcDecay(self) -> int:
@@ -654,7 +654,7 @@ class WM8960:
     def alcDecayTime(self, value:float) -> None:
         self.alcDecay = round(math.log2((constrain(value, _ALC_DECAY_TIME_MIN, _ALC_DECAY_TIME_MAX) - _ALC_DECAY_TIME_MIN) / _ALC_DECAY_TIME_MIN))
 
-    alcHold = WMBits(4, _REG_ALC2, 0)
+    alcHold = WOBits(4, _REG_ALC2, 0)
 
     @property
     def alcHoldTime(self) -> float:
@@ -668,12 +668,12 @@ class WM8960:
         else:
             self.alcHold = round(math.log2((constrain(value, _ALC_HOLD_TIME_MIN, _ALC_HOLD_TIME_MAX) - _ALC_HOLD_TIME_MIN) / _ALC_HOLD_TIME_MIN) + 1.0)
 
-    alcLimiter = WMBit(_REG_ALC3, 8)
+    alcLimiter = WOBit(_REG_ALC3, 8)
 
     # Noise Gate
 
-    noiseGateEnabled = WMBit(_REG_NOISE_GATE, 0)
-    noiseGateThreshold = WMBits(5, _REG_NOISE_GATE, 3)
+    noiseGateEnabled = WOBit(_REG_NOISE_GATE, 0)
+    noiseGateThreshold = WOBits(5, _REG_NOISE_GATE, 3)
 
     @property
     def noiseGateThresholdDb(self) -> float:
@@ -684,8 +684,8 @@ class WM8960:
 
     # DAC
 
-    dacLeftEnabled = WMBit(_REG_PWR_MGMT_2, 8)
-    dacRightEnabled = WMBit(_REG_PWR_MGMT_2, 7)
+    dacLeftEnabled = WOBit(_REG_PWR_MGMT_2, 8)
+    dacRightEnabled = WOBit(_REG_PWR_MGMT_2, 7)
 
     @property
     def dacEnabled(self) -> bool:
@@ -694,8 +694,8 @@ class WM8960:
     def dacEnabled(self, value:bool) -> None:
         self.dacLeftEnabled = self.dacRightEnabled = value
     
-    _dacLeftVolume = WMBits(8, _REG_LEFT_DAC_VOLUME, 0)
-    _dacLeftVolumeSet = WMBit(_REG_LEFT_DAC_VOLUME, 8)
+    _dacLeftVolume = WOBits(8, _REG_LEFT_DAC_VOLUME, 0)
+    _dacLeftVolumeSet = WOBit(_REG_LEFT_DAC_VOLUME, 8)
 
     @property
     def dacLeftVolume(self) -> int:
@@ -712,8 +712,8 @@ class WM8960:
     def dacLeftVolumeDb(self, value:float) -> None:
         self.dacLeftVolume = round(map_range(value, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX, 0, 254) + 1.0)
 
-    _dacRightVolume = WMBits(8, _REG_RIGHT_DAC_VOLUME, 0)
-    _dacRightVolumeSet = WMBit(_REG_RIGHT_DAC_VOLUME, 8)
+    _dacRightVolume = WOBits(8, _REG_RIGHT_DAC_VOLUME, 0)
+    _dacRightVolumeSet = WOBit(_REG_RIGHT_DAC_VOLUME, 8)
 
     @property
     def dacRightVolume(self) -> int:
@@ -744,22 +744,22 @@ class WM8960:
     def dacVolume(self, value:float) -> None:
         self.dacLeftVolume = self.dacRightVolume = round(map_range(value, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX, 0, 254) + 1.0)
 
-    dacMute = WMBit(_REG_ADC_DAC_CTRL_1, 3)
-    dacSoftMute = WMBit(_REG_ADC_DAC_CTRL_2, 3)
-    dacSlowSoftMute = WMBit(_REG_ADC_DAC_CTRL_2, 2)
-    dacAttenuation = WMBit(_REG_ADC_DAC_CTRL_1, 7)
+    dacMute = WOBit(_REG_ADC_DAC_CTRL_1, 3)
+    dacSoftMute = WOBit(_REG_ADC_DAC_CTRL_2, 3)
+    dacSlowSoftMute = WOBit(_REG_ADC_DAC_CTRL_2, 2)
+    dacAttenuation = WOBit(_REG_ADC_DAC_CTRL_1, 7)
 
     # 3D Enhance
 
-    enhanceEnabled = WMBit(_REG_3D_CONTROL, 0)
-    enhanceDepth = WMBits(4, _REG_3D_CONTROL, 1)
-    enhanceFilterLPF = WMBit(_REG_3D_CONTROL, 6)
-    enhanceFilterHPF = WMBit(_REG_3D_CONTROL, 5)
+    enhanceEnabled = WOBit(_REG_3D_CONTROL, 0)
+    enhanceDepth = WOBits(4, _REG_3D_CONTROL, 1)
+    enhanceFilterLPF = WOBit(_REG_3D_CONTROL, 6)
+    enhanceFilterHPF = WOBit(_REG_3D_CONTROL, 5)
 
     # Output Mixer
 
-    leftOutputEnabled = WMBit(_REG_PWR_MGMT_3, 3)
-    rightOutputEnabled = WMBit(_REG_PWR_MGMT_3, 2)
+    leftOutputEnabled = WOBit(_REG_PWR_MGMT_3, 3)
+    rightOutputEnabled = WOBit(_REG_PWR_MGMT_3, 2)
 
     @property
     def stereoOutputEnabled(self) -> bool:
@@ -770,8 +770,8 @@ class WM8960:
 
     ## DAC Output
 
-    dacLeftOutputEnabled = WMBit(_REG_LEFT_OUT_MIX, 8)
-    dacRightOutputEnabled = WMBit(_REG_RIGHT_OUT_MIX, 8)
+    dacLeftOutputEnabled = WOBit(_REG_LEFT_OUT_MIX, 8)
+    dacRightOutputEnabled = WOBit(_REG_RIGHT_OUT_MIX, 8)
 
     @property
     def dacOutputEnabled(self) -> bool:
@@ -782,8 +782,8 @@ class WM8960:
 
     ## Input 3 Output
 
-    input3LeftOutputEnabled = WMBit(_REG_LEFT_OUT_MIX, 7)
-    input3RightOutputEnabled = WMBit(_REG_RIGHT_OUT_MIX, 7)
+    input3LeftOutputEnabled = WOBit(_REG_LEFT_OUT_MIX, 7)
+    input3RightOutputEnabled = WOBit(_REG_RIGHT_OUT_MIX, 7)
     
     @property
     def input3OutputEnabled(self) -> bool:
@@ -792,7 +792,7 @@ class WM8960:
     def input3OutputEnabled(self, value:bool) -> None:
         self.input3LeftOutputEnabled = self.input3RightOutputEnabled = value
 
-    input3LeftOutputVolume = WMBits(3, _REG_LEFT_OUT_MIX, 4)
+    input3LeftOutputVolume = WOBits(3, _REG_LEFT_OUT_MIX, 4)
 
     @property
     def input3LeftOutputVolumeDb(self) -> float:
@@ -801,7 +801,7 @@ class WM8960:
     def input3LeftOutputVolumeDb(self, value:float) -> None:
         self.input3LeftOutputVolume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
 
-    input3RightOutputVolume = WMBits(3, _REG_RIGHT_OUT_MIX, 4)
+    input3RightOutputVolume = WOBits(3, _REG_RIGHT_OUT_MIX, 4)
 
     @property
     def input3RightOutputVolumeDb(self) -> float:
@@ -826,14 +826,14 @@ class WM8960:
 
     ## PGA Boost Mixer Output
 
-    pgaBoostLeftOutputEnabled = WMBit(_REG_BYPASS_1, 7)
-    pgaBoostRightOutputEnabled = WMBit(_REG_BYPASS_2, 7)
+    pgaBoostLeftOutputEnabled = WOBit(_REG_BYPASS_1, 7)
+    pgaBoostRightOutputEnabled = WOBit(_REG_BYPASS_2, 7)
 
     @property
     def pgaBoostOutputEnabled(self) -> bool:
         return self.pgaBoostLeftOutputEnabled and self.pgaBoostRightOutputEnabled
 
-    pgaBoostLeftOutputVolume = WMBits(3, _REG_BYPASS_1, 4)
+    pgaBoostLeftOutputVolume = WOBits(3, _REG_BYPASS_1, 4)
 
     @property
     def pgaBoostLeftOutputVolumeDb(self) -> float:
@@ -842,7 +842,7 @@ class WM8960:
     def pgaBoostLeftOutputVolumeDb(self, value:float) -> None:
         self.pgaBoostLeftOutputVolume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
 
-    pgaBoostRightOutputVolume = WMBits(3, _REG_BYPASS_2, 4)
+    pgaBoostRightOutputVolume = WOBits(3, _REG_BYPASS_2, 4)
 
     @property
     def pgaBoostRightOutputVolumeDb(self) -> float:
@@ -867,10 +867,10 @@ class WM8960:
 
     ## Mono Output
 
-    monoOutputEnabled = WMBit(_REG_PWR_MGMT_2, 1)
+    monoOutputEnabled = WOBit(_REG_PWR_MGMT_2, 1)
 
-    monoLeftMixEnabled = WMBit(_REG_MONO_OUT_MIX_1, 7)
-    monoRightMixEnabled = WMBit(_REG_MONO_OUT_MIX_2, 7)
+    monoLeftMixEnabled = WOBit(_REG_MONO_OUT_MIX_1, 7)
+    monoRightMixEnabled = WOBit(_REG_MONO_OUT_MIX_2, 7)
 
     @property
     def monoMixEnabled(self) -> bool:
@@ -879,16 +879,16 @@ class WM8960:
     def monoMixEnabled(self, value:bool) -> None:
         self.monoLeftMixEnabled = self.monoRightMixEnabled = value
 
-    monoOutputAttenuation = WMBit(_REG_MONO_OUT_VOLUME, 6)
+    monoOutputAttenuation = WOBit(_REG_MONO_OUT_VOLUME, 6)
 
-    vmid = WMBits(2, _REG_PWR_MGMT_1, 7)
+    vmid = WOBits(2, _REG_PWR_MGMT_1, 7)
 
     # Amplifier
 
     ## Headphones
 
-    leftHeadphoneEnabled = WMBit(_REG_PWR_MGMT_2, 5)
-    rightHeadphoneEnabled = WMBit(_REG_PWR_MGMT_2, 6)
+    leftHeadphoneEnabled = WOBit(_REG_PWR_MGMT_2, 5)
+    rightHeadphoneEnabled = WOBit(_REG_PWR_MGMT_2, 6)
 
     @property
     def headphoneEnabled(self) -> bool:
@@ -897,10 +897,10 @@ class WM8960:
     def headphoneEnabled(self, value:bool) -> None:
         self.leftHeadphoneEnabled = self.rightHeadphoneEnabled = value
 
-    headphoneStandby = WMBit(_REG_ANTI_POP_1, 0)
+    headphoneStandby = WOBit(_REG_ANTI_POP_1, 0)
 
-    _leftHeadphoneVolume = WMBits(7, _REG_LOUT1_VOLUME, 0)
-    _leftHeadphoneVolumeSet = WMBit(_REG_LOUT1_VOLUME, 8)
+    _leftHeadphoneVolume = WOBits(7, _REG_LOUT1_VOLUME, 0)
+    _leftHeadphoneVolumeSet = WOBit(_REG_LOUT1_VOLUME, 8)
 
     @property
     def leftHeadphoneVolume(self) -> int:
@@ -917,8 +917,8 @@ class WM8960:
     def leftHeadphoneVolumeDb(self, value:float) -> None:
         self.leftHeadphoneVolume = round(map_range(value, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX, 48, 127))
 
-    _rightHeadphoneVolume = WMBits(7, _REG_ROUT1_VOLUME, 0)
-    _rightHeadphoneVolumeSet = WMBit(_REG_ROUT1_VOLUME, 8)
+    _rightHeadphoneVolume = WOBits(7, _REG_ROUT1_VOLUME, 0)
+    _rightHeadphoneVolumeSet = WOBit(_REG_ROUT1_VOLUME, 8)
 
     @property
     def rightHeadphoneVolume(self) -> int:
@@ -949,8 +949,8 @@ class WM8960:
     def headphoneVolumeDb(self, value:float) -> None:
         self.leftHeadphoneVolume = self.rightHeadphoneVolume = round(map_range(value, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX, 48, 127) + 1.0)
 
-    leftHeadphoneZeroCross = WMBit(_REG_LOUT1_VOLUME, 7)
-    rightHeadphoneZeroCross = WMBit(_REG_LOUT1_VOLUME, 7)
+    leftHeadphoneZeroCross = WOBit(_REG_LOUT1_VOLUME, 7)
+    rightHeadphoneZeroCross = WOBit(_REG_LOUT1_VOLUME, 7)
 
     @property
     def headphoneZeroCross(self) -> bool:
@@ -961,8 +961,8 @@ class WM8960:
 
     ## Speakers
 
-    _leftSpeakerEnabled = WMBit(_REG_PWR_MGMT_2, 4)
-    _leftSpeakerAmpEnabled = WMBit(_REG_CLASS_D_CONTROL_1, 6)
+    _leftSpeakerEnabled = WOBit(_REG_PWR_MGMT_2, 4)
+    _leftSpeakerAmpEnabled = WOBit(_REG_CLASS_D_CONTROL_1, 6)
 
     @property
     def leftSpeakerEnabled(self) -> bool:
@@ -971,8 +971,8 @@ class WM8960:
     def leftSpeakerEnabled(self, value:bool) -> None:
         self._leftSpeakerEnabled = self._leftSpeakerAmpEnabled = value
     
-    _rightSpeakerEnabled = WMBit(_REG_PWR_MGMT_2, 3)
-    _rightSpeakerAmpEnabled = WMBit(_REG_CLASS_D_CONTROL_1, 7)
+    _rightSpeakerEnabled = WOBit(_REG_PWR_MGMT_2, 3)
+    _rightSpeakerAmpEnabled = WOBit(_REG_CLASS_D_CONTROL_1, 7)
 
     @property
     def rightSpeakerEnabled(self) -> bool:
@@ -988,8 +988,8 @@ class WM8960:
     def speakerEnabled(self, value:bool) -> None:
         self.leftSpeakerEnabled = self.rightSpeakerEnabled = value
 
-    _leftSpeakerVolume = WMBits(7, _REG_LOUT2_VOLUME, 0)
-    _leftSpeakerVolumeSet = WMBit(_REG_LOUT2_VOLUME, 8)
+    _leftSpeakerVolume = WOBits(7, _REG_LOUT2_VOLUME, 0)
+    _leftSpeakerVolumeSet = WOBit(_REG_LOUT2_VOLUME, 8)
 
     @property
     def leftSpeakerVolume(self) -> int:
@@ -1006,8 +1006,8 @@ class WM8960:
     def leftSpeakerVolumeDb(self, value:float) -> None:
         self.leftSpeakerVolume = round(map_range(value, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX, 48, 127))
 
-    _rightSpeakerVolume = WMBits(7, _REG_ROUT2_VOLUME, 0)
-    _rightSpeakerVolumeSet = WMBit(_REG_ROUT2_VOLUME, 8)
+    _rightSpeakerVolume = WOBits(7, _REG_ROUT2_VOLUME, 0)
+    _rightSpeakerVolumeSet = WOBit(_REG_ROUT2_VOLUME, 8)
 
     @property
     def rightSpeakerVolume(self) -> int:
@@ -1038,8 +1038,8 @@ class WM8960:
     def speakerVolume(self, value:float) -> None:
         self.leftSpeakerVolume = self.rightSpeakerVolume = round(map_range(value, _AMP_VOLUME_MIN, _AMP_VOLUME_MAX, 48, 127) + 1.0)
 
-    leftSpeakerZeroCross = WMBit(_REG_LOUT2_VOLUME, 7)
-    rightSpeakerZeroCross = WMBit(_REG_LOUT2_VOLUME, 7)
+    leftSpeakerZeroCross = WOBit(_REG_LOUT2_VOLUME, 7)
+    rightSpeakerZeroCross = WOBit(_REG_LOUT2_VOLUME, 7)
 
     @property
     def speakerZeroCross(self) -> bool:
@@ -1048,7 +1048,7 @@ class WM8960:
     def speakerZeroCross(self, value:bool) -> None:
         self.leftSpeakerZeroCross = self.rightSpeakerZeroCross = value
 
-    _speakerDcGain = WMBits(3, _REG_CLASS_D_CONTROL_3, 3)
+    _speakerDcGain = WOBits(3, _REG_CLASS_D_CONTROL_3, 3)
 
     @property
     def speakerDcGain(self) -> int:
@@ -1057,7 +1057,7 @@ class WM8960:
     def speakerDcGain(self, value:int) -> None:
         self._speakerDcGain = min(value, 5)
 
-    _speakerAcGain = WMBits(3, _REG_CLASS_D_CONTROL_3, 0)
+    _speakerAcGain = WOBits(3, _REG_CLASS_D_CONTROL_3, 0)
 
     @property
     def speakerAcGain(self) -> int:
@@ -1068,15 +1068,15 @@ class WM8960:
 
     # Digital Audio Interface Control
 
-    loopback = WMBit(_REG_AUDIO_INTERFACE_2, 0)
+    loopback = WOBit(_REG_AUDIO_INTERFACE_2, 0)
     
-    pll = WMBit(_REG_PWR_MGMT_2, 0)
-    pllPrescaleDiv2 = WMBit(_REG_PWR_MGMT_2, 4)
-    pllN = WMBits(4, _REG_PLL_N, 0)
+    pll = WOBit(_REG_PWR_MGMT_2, 0)
+    pllPrescaleDiv2 = WOBit(_REG_PWR_MGMT_2, 4)
+    pllN = WOBits(4, _REG_PLL_N, 0)
 
-    _pllK1 = WMBits(6, _REG_PLL_K_1, 0)
-    _pllK2 = WMBits(9, _REG_PLL_K_2, 0)
-    _pllK3 = WMBits(9, _REG_PLL_K_3, 0)
+    _pllK1 = WOBits(6, _REG_PLL_K_1, 0)
+    _pllK2 = WOBits(9, _REG_PLL_K_2, 0)
+    _pllK3 = WOBits(9, _REG_PLL_K_3, 0)
 
     @property
     def pllK(self) -> int:
@@ -1087,11 +1087,11 @@ class WM8960:
         self._pllK2 = (value >> 9) & 0b111111111
         self._pllK3 = value & 0b111111111
 
-    clockFractionalMode = WMBit(_REG_PLL_N, 5)
+    clockFractionalMode = WOBit(_REG_PLL_N, 5)
 
-    clockFromPLL = WMBit(_REG_CLOCKING_1, 0)
+    clockFromPLL = WOBit(_REG_CLOCKING_1, 0)
 
-    _systemClockDivider = WMBits(2, _REG_CLOCKING_1, 1)
+    _systemClockDivider = WOBits(2, _REG_CLOCKING_1, 1)
     
     @property
     def systemClockDiv2(self) -> bool:
@@ -1100,7 +1100,7 @@ class WM8960:
     def systemClockDiv2(self, value:bool) -> None:
         self._systemClockDivider = _SYSCLK_DIV_BY_2 if value else _SYSCLK_DIV_BY_1
     
-    _adcClockDivider = WMBits(3, _REG_CLOCKING_1, 6)
+    _adcClockDivider = WOBits(3, _REG_CLOCKING_1, 6)
 
     @property
     def adcClockDivider(self) -> int:
@@ -1111,7 +1111,7 @@ class WM8960:
         if value in _ADCDACDIV:
             self._adcClockDivider = _ADCDACDIV.index(value)
 
-    _dacClockDivider = WMBits(3, _REG_CLOCKING_1, 3)
+    _dacClockDivider = WOBits(3, _REG_CLOCKING_1, 3)
 
     @property
     def dacClockDivider(self) -> int:
@@ -1122,7 +1122,7 @@ class WM8960:
         if value in _ADCDACDIV:
             self._dacClockDivider = _ADCDACDIV.index(value)
 
-    _baseClockDivider = WMBits(4, _REG_CLOCKING_2, 0)
+    _baseClockDivider = WOBits(4, _REG_CLOCKING_2, 0)
 
     @property
     def baseClockDivider(self) -> float:
@@ -1134,7 +1134,7 @@ class WM8960:
             self._baseClockDivider = _BCLKDIV.index(value)
         
 
-    _ampClockDivider = WMBits(3, _REG_CLOCKING_2, 6)
+    _ampClockDivider = WOBits(3, _REG_CLOCKING_2, 6)
 
     @property
     def ampClockDivider(self) -> float:
@@ -1147,9 +1147,9 @@ class WM8960:
 
     ## Mode
 
-    masterMode = WMBit(_REG_AUDIO_INTERFACE_1, 6)
+    masterMode = WOBit(_REG_AUDIO_INTERFACE_1, 6)
 
-    _wordLength = WMBits(2, _REG_AUDIO_INTERFACE_1, 2)
+    _wordLength = WOBits(2, _REG_AUDIO_INTERFACE_1, 2)
 
     @property
     def wordLength(self) -> int:
@@ -1162,13 +1162,13 @@ class WM8960:
     def wordLength(self, value:int) -> None:
         self._wordLength = (min(value, 28) - 16) // 4
 
-    wordSelectInverted = WMBit(_REG_AUDIO_INTERFACE_1, 4)
+    wordSelectInverted = WOBit(_REG_AUDIO_INTERFACE_1, 4)
 
-    adcChannelSwap = WMBit(_REG_AUDIO_INTERFACE_1, 8)
+    adcChannelSwap = WOBit(_REG_AUDIO_INTERFACE_1, 8)
 
-    vrefOutputDisabled = WMBit(_REG_ADDITIONAL_CONTROL_3, 6)
+    vrefOutputDisabled = WOBit(_REG_ADDITIONAL_CONTROL_3, 6)
 
-    _vsel = WMBits(2, _REG_ADDITIONAL_CONTROL_1, 6)
+    _vsel = WOBits(2, _REG_ADDITIONAL_CONTROL_1, 6)
 
     @property
     def powerSupply(self) -> float:
@@ -1179,11 +1179,11 @@ class WM8960:
 
     ## GPIO
 
-    gpioOutput = WMBit(_REG_AUDIO_INTERFACE_2, 6)
-    gpioOutputMode = WMBits(3, _REG_ADDITIONAL_CONTROL_4, 4)
-    gpioOutputInverted = WMBit(_REG_ADDITIONAL_CONTROL_4, 7)
+    gpioOutput = WOBit(_REG_AUDIO_INTERFACE_2, 6)
+    gpioOutputMode = WOBits(3, _REG_ADDITIONAL_CONTROL_4, 4)
+    gpioOutputInverted = WOBit(_REG_ADDITIONAL_CONTROL_4, 7)
     
-    _gpioClockDivider = WMBits(3, _REG_CLOCKING_2, 6)
+    _gpioClockDivider = WOBits(3, _REG_CLOCKING_2, 6)
 
     @property
     def gpioClockDivider(self) -> int:
@@ -1299,9 +1299,9 @@ class WM8960:
         self.vmid = VMIDSEL_PLAYBACK
 
     # Resets all registers to their default state
-    _reset = WMBit(_REG_RESET, 7)
+    _reset = WOBit(_REG_RESET, 7)
     def reset(self) -> None:
         self._reset = True
         for name in dir(self):
-            if not name.startswith('_') and isinstance(getattr(self, name), (WMBit, WMBits)):
+            if not name.startswith('_') and isinstance(getattr(self, name), (WOBit, WOBits)):
                 getattr(self, name).reset(self)
