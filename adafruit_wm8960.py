@@ -324,173 +324,173 @@ class WM8960:
     
     ## PWR_MGMT
 
-    pgaLeftEnabled = WOBit(_REG_PWR_MGMT_3, 5)
-    pgaRightEnabled = WOBit(_REG_PWR_MGMT_3, 4)
+    micLeftEnabled = WOBit(_REG_PWR_MGMT_3, 5)
+    micRightEnabled = WOBit(_REG_PWR_MGMT_3, 4)
 
     @property
-    def pgaEnabled(self) -> bool:
-        return self.pgaLeftEnabled and self.pgaRightEnabled
-    @pgaEnabled.setter
-    def pgaEnabled(self, value:bool) -> None:
-        self.pgaLeftEnabled = self.pgaRightEnabled = value
+    def micEnabled(self) -> bool:
+        return self.micLeftEnabled and self.micRightEnabled
+    @micEnabled.setter
+    def micEnabled(self, value:bool) -> None:
+        self.micLeftEnabled = self.micRightEnabled = value
 
     ## SIGNAL_PATH
 
-    _pgaInput1Left = WOBit(_REG_ADCL_SIGNAL_PATH, 8)
-    _pgaInput2Left = WOBit(_REG_ADCL_SIGNAL_PATH, 6)
-    _pgaInput3Left = WOBit(_REG_ADCL_SIGNAL_PATH, 7)
+    _micInput1Left = WOBit(_REG_ADCL_SIGNAL_PATH, 8)
+    _micInput2Left = WOBit(_REG_ADCL_SIGNAL_PATH, 6)
+    _micInput3Left = WOBit(_REG_ADCL_SIGNAL_PATH, 7)
 
-    _pgaInput1Right = WOBit(_REG_ADCR_SIGNAL_PATH, 8)
-    _pgaInput2Right = WOBit(_REG_ADCR_SIGNAL_PATH, 6)
-    _pgaInput3Right = WOBit(_REG_ADCR_SIGNAL_PATH, 7)
+    _micInput1Right = WOBit(_REG_ADCR_SIGNAL_PATH, 8)
+    _micInput2Right = WOBit(_REG_ADCR_SIGNAL_PATH, 6)
+    _micInput3Right = WOBit(_REG_ADCR_SIGNAL_PATH, 7)
 
     @property
-    def pgaNonInvSignalLeft(self) -> int:
-        if self._pgaInput2Left:
+    def micNonInvSignalLeft(self) -> int:
+        if self._micInput2Left:
             return PGA_INPUT2
-        elif self._pgaInput3Left:
+        elif self._micInput3Left:
             return PGA_INPUT3
         else:
             return PGA_VMID
-    @pgaNonInvSignalLeft.setter
-    def pgaNonInvSignalLeft(self, signal:int) -> None:
-        self._pgaInput2Left = signal == PGA_INPUT2
-        self._pgaInput3Left = signal == PGA_INPUT3
+    @micNonInvSignalLeft.setter
+    def micNonInvSignalLeft(self, signal:int) -> None:
+        self._micInput2Left = signal == PGA_INPUT2
+        self._micInput3Left = signal == PGA_INPUT3
     
     @property
-    def pgaNonInvSignalRight(self) -> int:
-        if self._pgaInput2Right:
+    def micNonInvSignalRight(self) -> int:
+        if self._micInput2Right:
             return PGA_INPUT2
-        elif self._pgaInput3Right:
+        elif self._micInput3Right:
             return PGA_INPUT3
         else:
             return PGA_VMID
-    @pgaNonInvSignalRight.setter
-    def pgaNonInvSignalRight(self, signal:int) -> None:
-        self._pgaInput2Right = signal == PGA_INPUT2
-        self._pgaInput3Right = signal == PGA_INPUT3
+    @micNonInvSignalRight.setter
+    def micNonInvSignalRight(self, signal:int) -> None:
+        self._micInput2Right = signal == PGA_INPUT2
+        self._micInput3Right = signal == PGA_INPUT3
 
     @property
-    def pgaNonInvSignal(self) -> int:
+    def micNonInvSignal(self) -> int:
         # NOTE: Not checking right signal
-        return self.pgaNonInvSignalLeft
-    @pgaNonInvSignal.setter
-    def pgaNonInvSignal(self, signal:int) -> None:
-        self.pgaNonInvSignalLeft = self.pgaNonInvSignalRight = signal
+        return self.micNonInvSignalLeft
+    @micNonInvSignal.setter
+    def micNonInvSignal(self, signal:int) -> None:
+        self.micNonInvSignalLeft = self.micNonInvSignalRight = signal
 
     ## Boost
 
-    pgaLeftBoostEnabled = WOBit(_REG_ADCL_SIGNAL_PATH, 3)
-    pgaRightBoostEnabled = WOBit(_REG_ADCR_SIGNAL_PATH, 3)
+    micLeftBoostEnabled = WOBit(_REG_ADCL_SIGNAL_PATH, 3)
+    micRightBoostEnabled = WOBit(_REG_ADCR_SIGNAL_PATH, 3)
 
     @property
-    def pgaBoostEnabled(self) -> None:
-        return self.pgaLeftBoostEnabled and self.pgaRightBoostEnabled
-    @pgaBoostEnabled.setter
-    def pgaBoostEnabled(self, value:int) -> None:
-        self.pgaLeftBoostEnabled = self.pgaRightBoostEnabled = value
+    def micBoostEnabled(self) -> None:
+        return self.micLeftBoostEnabled and self.micRightBoostEnabled
+    @micBoostEnabled.setter
+    def micBoostEnabled(self, value:int) -> None:
+        self.micLeftBoostEnabled = self.micRightBoostEnabled = value
 
-    pgaBoostGainLeft = WOBits(2, _REG_ADCL_SIGNAL_PATH, 4)
-    pgaBoostGainRight = WOBits(2, _REG_ADCR_SIGNAL_PATH, 4)
+    micBoostGainLeft = WOBits(2, _REG_ADCL_SIGNAL_PATH, 4)
+    micBoostGainRight = WOBits(2, _REG_ADCR_SIGNAL_PATH, 4)
 
     @property
-    def pgaBoostGain(self) -> None:
-        return max(self.pgaBoostGainLeft, self.pgaBoostGainRight)
-    @pgaBoostGain.setter
-    def pgaBoostGain(self, value:int) -> None:
-        self.pgaGainLeft = self.pgaGainRight = value
+    def micBoostGain(self) -> None:
+        return max(self.micBoostGainLeft, self.micBoostGainRight)
+    @micBoostGain.setter
+    def micBoostGain(self, value:int) -> None:
+        self.micGainLeft = self.micGainRight = value
 
     ## Volume
 
-    _pgaLeftVolume = WOBits(6, _REG_LEFT_INPUT_VOLUME, 0)
-    _pgaLeftVolumeSet = WOBit(_REG_LEFT_INPUT_VOLUME, 8)
+    _micLeftVolume = WOBits(6, _REG_LEFT_INPUT_VOLUME, 0)
+    _micLeftVolumeSet = WOBit(_REG_LEFT_INPUT_VOLUME, 8)
 
-    _pgaRightVolume = WOBits(6, _REG_RIGHT_INPUT_VOLUME, 0)
-    _pgaRightVolumeSet = WOBit(_REG_RIGHT_INPUT_VOLUME, 8)
-
-    @property
-    def pgaLeftVolume(self) -> int:
-        return self._pgaLeftVolume
-    @pgaLeftVolume.setter
-    def pgaLeftVolume(self, value:int) -> None:
-        self._pgaLeftVolume = value
-        self._pgaLeftVolumeSet = True
+    _micRightVolume = WOBits(6, _REG_RIGHT_INPUT_VOLUME, 0)
+    _micRightVolumeSet = WOBit(_REG_RIGHT_INPUT_VOLUME, 8)
 
     @property
-    def pgaLeftVolumeDb(self) -> float:
-        return map_range(self.pgaLeftVolume, 0, 63, _PGA_GAIN_MIN, _PGA_GAIN_MAX)
-    @pgaLeftVolumeDb.setter
-    def pgaLeftVolumeDb(self, value:float) -> None:
-        self.pgaLeftVolume = round(map_range(value, _PGA_GAIN_MIN, _PGA_GAIN_MAX, 0, 63))
+    def micLeftVolume(self) -> int:
+        return self._micLeftVolume
+    @micLeftVolume.setter
+    def micLeftVolume(self, value:int) -> None:
+        self._micLeftVolume = value
+        self._micLeftVolumeSet = True
+
+    @property
+    def micLeftVolumeDb(self) -> float:
+        return map_range(self.micLeftVolume, 0, 63, _PGA_GAIN_MIN, _PGA_GAIN_MAX)
+    @micLeftVolumeDb.setter
+    def micLeftVolumeDb(self, value:float) -> None:
+        self.micLeftVolume = round(map_range(value, _PGA_GAIN_MIN, _PGA_GAIN_MAX, 0, 63))
     
     @property
-    def pgaRightVolume(self) -> int:
-        return self._pgaRightVolume
-    @pgaRightVolume.setter
-    def pgaRightVolume(self, value:int) -> None:
-        self._pgaRightVolume = value
-        self._pgaRightVolumeSet = True
+    def micRightVolume(self) -> int:
+        return self._micRightVolume
+    @micRightVolume.setter
+    def micRightVolume(self, value:int) -> None:
+        self._micRightVolume = value
+        self._micRightVolumeSet = True
 
     @property
-    def pgaRightVolumeDb(self) -> float:
-        return map_range(self.pgaRightVolume, 0, 63, _PGA_GAIN_MIN, _PGA_GAIN_MAX)
-    @pgaRightVolumeDb.setter
-    def pgaRightVolumeDb(self, value:float) -> None:
-        self.pgaRightVolume = round(map_range(value, _PGA_GAIN_MIN, _PGA_GAIN_MAX, 0, 63))
+    def micRightVolumeDb(self) -> float:
+        return map_range(self.micRightVolume, 0, 63, _PGA_GAIN_MIN, _PGA_GAIN_MAX)
+    @micRightVolumeDb.setter
+    def micRightVolumeDb(self, value:float) -> None:
+        self.micRightVolume = round(map_range(value, _PGA_GAIN_MIN, _PGA_GAIN_MAX, 0, 63))
     
     @property
-    def pgaVolume(self) -> int:
-        return self.pgaLeftVolume
-    @pgaVolume.setter
-    def pgaVolume(self, value:int) -> None:
-        self.pgaLeftVolume = self.pgaRightVolume = value
+    def micVolume(self) -> int:
+        return self.micLeftVolume
+    @micVolume.setter
+    def micVolume(self, value:int) -> None:
+        self.micLeftVolume = self.micRightVolume = value
 
     @property
-    def pgaVolumeDb(self) -> float:
-        return self.pgaLeftVolumeDb
-    @pgaVolumeDb.setter
-    def pgaVolumeDb(self, value:float) -> None:
-        self.pgaVolume = round(map_range(value, _PGA_GAIN_MIN, _PGA_GAIN_MAX, 0, 63))
+    def micVolumeDb(self) -> float:
+        return self.micLeftVolumeDb
+    @micVolumeDb.setter
+    def micVolumeDb(self, value:float) -> None:
+        self.micVolume = round(map_range(value, _PGA_GAIN_MIN, _PGA_GAIN_MAX, 0, 63))
 
     ## Zero Cross
 
-    pgaLeftZeroCross = WOBit(_REG_LEFT_INPUT_VOLUME, 6)
-    pgaRightZeroCross = WOBit(_REG_RIGHT_INPUT_VOLUME, 6)
+    micLeftZeroCross = WOBit(_REG_LEFT_INPUT_VOLUME, 6)
+    micRightZeroCross = WOBit(_REG_RIGHT_INPUT_VOLUME, 6)
 
     @property
-    def pgaZeroCross(self) -> bool:
-        return self.pgaLeftZeroCross and self.pgaRightZeroCross
-    @pgaZeroCross.setter
-    def pgaZeroCross(self, value:bool) -> None:
-        self.pgaLeftZeroCross = self.pgaRightZeroCross = value
+    def micZeroCross(self) -> bool:
+        return self.micLeftZeroCross and self.micRightZeroCross
+    @micZeroCross.setter
+    def micZeroCross(self, value:bool) -> None:
+        self.micLeftZeroCross = self.micRightZeroCross = value
 
     ## Mute
 
-    _pgaLeftMute = WOBit(_REG_LEFT_INPUT_VOLUME, 7)
-    _pgaRightMute = WOBit(_REG_RIGHT_INPUT_VOLUME, 7)
+    _micLeftMute = WOBit(_REG_LEFT_INPUT_VOLUME, 7)
+    _micRightMute = WOBit(_REG_RIGHT_INPUT_VOLUME, 7)
 
     @property
-    def pgaLeftMute(self) -> bool:
-        return self._pgaLeftMute
-    @pgaLeftMute.setter
-    def pgaLeftMute(self, value:bool) -> None:
-        self._pgaLeftMute = value
-        self._pgaLeftVolumeSet = True
+    def micLeftMute(self) -> bool:
+        return self._micLeftMute
+    @micLeftMute.setter
+    def micLeftMute(self, value:bool) -> None:
+        self._micLeftMute = value
+        self._micLeftVolumeSet = True
 
     @property
-    def pgaRightMute(self) -> bool:
-        return self._pgaRightMute
-    @pgaRightMute.setter
-    def pgaRightMute(self, value:bool) -> None:
-        self._pgaRightMute = value
-        self._pgaRightVolumeSet = True
+    def micRightMute(self) -> bool:
+        return self._micRightMute
+    @micRightMute.setter
+    def micRightMute(self, value:bool) -> None:
+        self._micRightMute = value
+        self._micRightVolumeSet = True
 
     @property
-    def pgaMute(self) -> bool:
-        return self._pgaLeftMute and self._pgaRightMute
-    @pgaMute.setter
-    def pgaMute(self, value:bool) -> None:
-        self._pgaLeftMute = self._pgaRightMute = value
+    def micMute(self) -> bool:
+        return self._micLeftMute and self._micRightMute
+    @micMute.setter
+    def micMute(self, value:bool) -> None:
+        self._micLeftMute = self._micRightMute = value
 
     # Boost Mixer
 
@@ -826,44 +826,44 @@ class WM8960:
 
     ## PGA Boost Mixer Output
 
-    pgaBoostLeftOutputEnabled = WOBit(_REG_BYPASS_1, 7)
-    pgaBoostRightOutputEnabled = WOBit(_REG_BYPASS_2, 7)
+    micBoostLeftOutputEnabled = WOBit(_REG_BYPASS_1, 7)
+    micBoostRightOutputEnabled = WOBit(_REG_BYPASS_2, 7)
 
     @property
-    def pgaBoostOutputEnabled(self) -> bool:
-        return self.pgaBoostLeftOutputEnabled and self.pgaBoostRightOutputEnabled
+    def micBoostOutputEnabled(self) -> bool:
+        return self.micBoostLeftOutputEnabled and self.micBoostRightOutputEnabled
 
-    pgaBoostLeftOutputVolume = WOBits(3, _REG_BYPASS_1, 4)
-
-    @property
-    def pgaBoostLeftOutputVolumeDb(self) -> float:
-        return map_range(self.pgaBoostLeftOutputVolume, 0, 7, _OUTPUT_VOLUME_MAX, _OUTPUT_VOLUME_MIN)
-    @pgaBoostLeftOutputVolumeDb.setter
-    def pgaBoostLeftOutputVolumeDb(self, value:float) -> None:
-        self.pgaBoostLeftOutputVolume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
-
-    pgaBoostRightOutputVolume = WOBits(3, _REG_BYPASS_2, 4)
+    micBoostLeftOutputVolume = WOBits(3, _REG_BYPASS_1, 4)
 
     @property
-    def pgaBoostRightOutputVolumeDb(self) -> float:
-        return map_range(self.pgaBoostRightOutputVolume, 0, 7, _OUTPUT_VOLUME_MAX, _OUTPUT_VOLUME_MIN)
-    @pgaBoostRightOutputVolumeDb.setter
-    def pgaBoostRightOutputVolumeDb(self, value:float) -> None:
-        self.pgaBoostRightOutputVolume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+    def micBoostLeftOutputVolumeDb(self) -> float:
+        return map_range(self.micBoostLeftOutputVolume, 0, 7, _OUTPUT_VOLUME_MAX, _OUTPUT_VOLUME_MIN)
+    @micBoostLeftOutputVolumeDb.setter
+    def micBoostLeftOutputVolumeDb(self, value:float) -> None:
+        self.micBoostLeftOutputVolume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+
+    micBoostRightOutputVolume = WOBits(3, _REG_BYPASS_2, 4)
 
     @property
-    def pgaBoostOutputVolume(self) -> int:
-        return self.pgaBoostLeftOutputVolume
-    @pgaBoostOutputVolume.setter
-    def pgaBoostOutputVolume(self, value:int) -> None:
-        self.pgaBoostLeftOutputVolume = self.pgaBoostRightOutputVolume = value
+    def micBoostRightOutputVolumeDb(self) -> float:
+        return map_range(self.micBoostRightOutputVolume, 0, 7, _OUTPUT_VOLUME_MAX, _OUTPUT_VOLUME_MIN)
+    @micBoostRightOutputVolumeDb.setter
+    def micBoostRightOutputVolumeDb(self, value:float) -> None:
+        self.micBoostRightOutputVolume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
 
     @property
-    def pgaBoostOutputVolumeDb(self) -> float:
-        return self.pgaBoostLeftOutputVolumeDb
-    @pgaBoostOutputVolumeDb.setter
-    def pgaBoostOutputVolumeDb(self, value:float) -> None:
-        self.pgaBoostLeftOutputVolume = self.pgaBoostRightOutputVolume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+    def micBoostOutputVolume(self) -> int:
+        return self.micBoostLeftOutputVolume
+    @micBoostOutputVolume.setter
+    def micBoostOutputVolume(self, value:int) -> None:
+        self.micBoostLeftOutputVolume = self.micBoostRightOutputVolume = value
+
+    @property
+    def micBoostOutputVolumeDb(self) -> float:
+        return self.micBoostLeftOutputVolumeDb
+    @micBoostOutputVolumeDb.setter
+    def micBoostOutputVolumeDb(self, value:float) -> None:
+        self.micBoostLeftOutputVolume = self.micBoostRightOutputVolume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
 
     ## Mono Output
 
