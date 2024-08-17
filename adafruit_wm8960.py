@@ -310,29 +310,29 @@ class WM8960:
 
     vref = WOBit(_REG_PWR_MGMT_1, 6)
 
-    analogInputLeftEnabled = WOBit(_REG_PWR_MGMT_1, 5)
-    analogInputRightEnabled = WOBit(_REG_PWR_MGMT_1, 4)
+    analogInputLeft = WOBit(_REG_PWR_MGMT_1, 5)
+    analogInputRight = WOBit(_REG_PWR_MGMT_1, 4)
 
     @property
-    def analogInputEnabled(self) -> bool:
-        return self.analogInputLeftEnabled and self.analogInputRightEnabled
-    @analogInputEnabled.setter
-    def analogInputEnabled(self, value:bool) -> None:
-        self.analogInputLeftEnabled = self.analogInputRightEnabled = value
+    def analogInput(self) -> bool:
+        return self.analogInputLeft and self.analogInputRight
+    @analogInput.setter
+    def analogInput(self, value:bool) -> None:
+        self.analogInputLeft = self.analogInputRight = value
 
     # PGA
     
     ## PWR_MGMT
 
-    micLeftEnabled = WOBit(_REG_PWR_MGMT_3, 5)
-    micRightEnabled = WOBit(_REG_PWR_MGMT_3, 4)
+    micLeft = WOBit(_REG_PWR_MGMT_3, 5)
+    micRight = WOBit(_REG_PWR_MGMT_3, 4)
 
     @property
-    def micEnabled(self) -> bool:
-        return self.micLeftEnabled and self.micRightEnabled
-    @micEnabled.setter
-    def micEnabled(self, value:bool) -> None:
-        self.micLeftEnabled = self.micRightEnabled = value
+    def mic(self) -> bool:
+        return self.micLeft and self.micRight
+    @mic.setter
+    def mic(self, value:bool) -> None:
+        self.micLeft = self.micRight = value
 
     ## SIGNAL_PATH
 
@@ -380,15 +380,15 @@ class WM8960:
 
     ## Boost
 
-    micLeftBoostEnabled = WOBit(_REG_ADCL_SIGNAL_PATH, 3)
-    micRightBoostEnabled = WOBit(_REG_ADCR_SIGNAL_PATH, 3)
+    micLeftBoost = WOBit(_REG_ADCL_SIGNAL_PATH, 3)
+    micRightBoost = WOBit(_REG_ADCR_SIGNAL_PATH, 3)
 
     @property
-    def micBoostEnabled(self) -> None:
-        return self.micLeftBoostEnabled and self.micRightBoostEnabled
-    @micBoostEnabled.setter
-    def micBoostEnabled(self, value:int) -> None:
-        self.micLeftBoostEnabled = self.micRightBoostEnabled = value
+    def micBoost(self) -> None:
+        return self.micLeftBoost and self.micRightBoost
+    @micBoost.setter
+    def micBoost(self, value:int) -> None:
+        self.micLeftBoost = self.micRightBoost = value
 
     micBoostGainLeft = WOBits(2, _REG_ADCL_SIGNAL_PATH, 4)
     micBoostGainRight = WOBits(2, _REG_ADCR_SIGNAL_PATH, 4)
@@ -521,15 +521,15 @@ class WM8960:
 
     # ADC
 
-    adcLeftEnabled = WOBit(_REG_PWR_MGMT_1, 3)
-    adcRightEnabled = WOBit(_REG_PWR_MGMT_1, 2)
+    adcLeft = WOBit(_REG_PWR_MGMT_1, 3)
+    adcRight = WOBit(_REG_PWR_MGMT_1, 2)
 
     @property
-    def adcEnabled(self) -> bool:
-        return self.adcLeftEnabled and self.adcRightEnabled
-    @adcEnabled.setter
-    def adcEnabled(self, value:bool) -> None:
-        self.adcLeftEnabled = self.adcRightEnabled = value
+    def adc(self) -> bool:
+        return self.adcLeft and self.adcRight
+    @adc.setter
+    def adc(self, value:bool) -> None:
+        self.adcLeft = self.adcRight = value
     
     ## Volume
 
@@ -585,15 +585,15 @@ class WM8960:
 
     # ALC
 
-    alcLeftEnabled = WOBit(_REG_ALC1, 7)
-    alcRightEnabled = WOBit(_REG_ALC1, 8)
+    alcLeft = WOBit(_REG_ALC1, 7)
+    alcRight = WOBit(_REG_ALC1, 8)
 
     @property
-    def alcEnabled(self) -> bool:
-        return self.alcLeftEnabled and self.alcRightEnabled
-    @alcEnabled.setter
-    def alcEnabled(self, value:bool) -> None:
-        self.alcLeftEnabled = self.alcRightEnabled = value
+    def alc(self) -> bool:
+        return self.alcLeft and self.alcRight
+    @alc.setter
+    def alc(self, value:bool) -> None:
+        self.alcLeft = self.alcRight = value
 
     alcTarget = WOBits(4, _REG_ALC1, 0)
 
@@ -672,7 +672,7 @@ class WM8960:
 
     # Noise Gate
 
-    noiseGateEnabled = WOBit(_REG_NOISE_GATE, 0)
+    noiseGate = WOBit(_REG_NOISE_GATE, 0)
     noiseGateThreshold = WOBits(5, _REG_NOISE_GATE, 3)
 
     @property
@@ -684,15 +684,15 @@ class WM8960:
 
     # DAC
 
-    dacLeftEnabled = WOBit(_REG_PWR_MGMT_2, 8)
-    dacRightEnabled = WOBit(_REG_PWR_MGMT_2, 7)
+    dacLeft = WOBit(_REG_PWR_MGMT_2, 8)
+    dacRight = WOBit(_REG_PWR_MGMT_2, 7)
 
     @property
-    def dacEnabled(self) -> bool:
-        return self.dacLeftEnabled and self.dacRightEnabled
-    @dacEnabled.setter
-    def dacEnabled(self, value:bool) -> None:
-        self.dacLeftEnabled = self.dacRightEnabled = value
+    def dac(self) -> bool:
+        return self.dacLeft and self.dacRight
+    @dac.setter
+    def dac(self, value:bool) -> None:
+        self.dacLeft = self.dacRight = value
     
     _dacLeftVolume = WOBits(8, _REG_LEFT_DAC_VOLUME, 0)
     _dacLeftVolumeSet = WOBit(_REG_LEFT_DAC_VOLUME, 8)
@@ -751,46 +751,46 @@ class WM8960:
 
     # 3D Enhance
 
-    enhanceEnabled = WOBit(_REG_3D_CONTROL, 0)
+    enhance = WOBit(_REG_3D_CONTROL, 0)
     enhanceDepth = WOBits(4, _REG_3D_CONTROL, 1)
     enhanceFilterLPF = WOBit(_REG_3D_CONTROL, 6)
     enhanceFilterHPF = WOBit(_REG_3D_CONTROL, 5)
 
     # Output Mixer
 
-    leftOutputEnabled = WOBit(_REG_PWR_MGMT_3, 3)
-    rightOutputEnabled = WOBit(_REG_PWR_MGMT_3, 2)
+    leftOutput = WOBit(_REG_PWR_MGMT_3, 3)
+    rightOutput = WOBit(_REG_PWR_MGMT_3, 2)
 
     @property
-    def stereoOutputEnabled(self) -> bool:
-        return self.leftOutputEnabled and self.rightOutputEnabled
-    @stereoOutputEnabled.setter
-    def stereoOutputEnabled(self, value:bool):
-        self.leftOutputEnabled = self.rightOutputEnabled = value
+    def output(self) -> bool:
+        return self.leftOutput and self.rightOutput
+    @output.setter
+    def output(self, value:bool):
+        self.leftOutput = self.rightOutput = value
 
     ## DAC Output
 
-    dacLeftOutputEnabled = WOBit(_REG_LEFT_OUT_MIX, 8)
-    dacRightOutputEnabled = WOBit(_REG_RIGHT_OUT_MIX, 8)
+    dacLeftOutput = WOBit(_REG_LEFT_OUT_MIX, 8)
+    dacRightOutput = WOBit(_REG_RIGHT_OUT_MIX, 8)
 
     @property
-    def dacOutputEnabled(self) -> bool:
-        return self.dacLeftOutputEnabled and self.dacRightOutputEnabled
-    @dacOutputEnabled.setter
-    def dacOutputEnabled(self, value:bool) -> None:
-        self.dacLeftOutputEnabled = self.dacRightOutputEnabled = value
+    def dacOutput(self) -> bool:
+        return self.dacLeftOutput and self.dacRightOutput
+    @dacOutput.setter
+    def dacOutput(self, value:bool) -> None:
+        self.dacLeftOutput = self.dacRightOutput = value
 
     ## Input 3 Output
 
-    input3LeftOutputEnabled = WOBit(_REG_LEFT_OUT_MIX, 7)
-    input3RightOutputEnabled = WOBit(_REG_RIGHT_OUT_MIX, 7)
+    input3LeftOutput = WOBit(_REG_LEFT_OUT_MIX, 7)
+    input3RightOutput = WOBit(_REG_RIGHT_OUT_MIX, 7)
     
     @property
-    def input3OutputEnabled(self) -> bool:
-        return self.input3LeftOutputEnabled and self.input3RightOutputEnabled
-    @input3OutputEnabled.setter
-    def input3OutputEnabled(self, value:bool) -> None:
-        self.input3LeftOutputEnabled = self.input3RightOutputEnabled = value
+    def input3Output(self) -> bool:
+        return self.input3LeftOutput and self.input3RightOutput
+    @input3Output.setter
+    def input3Output(self, value:bool) -> None:
+        self.input3LeftOutput = self.input3RightOutput = value
 
     input3LeftOutputVolume = WOBits(3, _REG_LEFT_OUT_MIX, 4)
 
@@ -826,12 +826,12 @@ class WM8960:
 
     ## PGA Boost Mixer Output
 
-    micBoostLeftOutputEnabled = WOBit(_REG_BYPASS_1, 7)
-    micBoostRightOutputEnabled = WOBit(_REG_BYPASS_2, 7)
+    micBoostLeftOutput = WOBit(_REG_BYPASS_1, 7)
+    micBoostRightOutput = WOBit(_REG_BYPASS_2, 7)
 
     @property
-    def micBoostOutputEnabled(self) -> bool:
-        return self.micBoostLeftOutputEnabled and self.micBoostRightOutputEnabled
+    def micBoostOutput(self) -> bool:
+        return self.micBoostLeftOutput and self.micBoostRightOutput
 
     micBoostLeftOutputVolume = WOBits(3, _REG_BYPASS_1, 4)
 
@@ -867,17 +867,17 @@ class WM8960:
 
     ## Mono Output
 
-    monoOutputEnabled = WOBit(_REG_PWR_MGMT_2, 1)
+    monoOutput = WOBit(_REG_PWR_MGMT_2, 1)
 
-    monoLeftMixEnabled = WOBit(_REG_MONO_OUT_MIX_1, 7)
-    monoRightMixEnabled = WOBit(_REG_MONO_OUT_MIX_2, 7)
+    monoLeftMix = WOBit(_REG_MONO_OUT_MIX_1, 7)
+    monoRightMix = WOBit(_REG_MONO_OUT_MIX_2, 7)
 
     @property
-    def monoMixEnabled(self) -> bool:
-        return self.monoLeftMixEnabled and self.monoRightMixEnabled
-    @monoMixEnabled.setter
-    def monoMixEnabled(self, value:bool) -> None:
-        self.monoLeftMixEnabled = self.monoRightMixEnabled = value
+    def monoMix(self) -> bool:
+        return self.monoLeftMix and self.monoRightMix
+    @monoMix.setter
+    def monoMix(self, value:bool) -> None:
+        self.monoLeftMix = self.monoRightMix = value
 
     monoOutputAttenuation = WOBit(_REG_MONO_OUT_VOLUME, 6)
 
@@ -887,15 +887,15 @@ class WM8960:
 
     ## Headphones
 
-    leftHeadphoneEnabled = WOBit(_REG_PWR_MGMT_2, 5)
-    rightHeadphoneEnabled = WOBit(_REG_PWR_MGMT_2, 6)
+    leftHeadphone = WOBit(_REG_PWR_MGMT_2, 5)
+    rightHeadphone = WOBit(_REG_PWR_MGMT_2, 6)
 
     @property
-    def headphoneEnabled(self) -> bool:
-        return self.leftHeadphoneEnabled and self.rightHeadphoneEnabled
-    @headphoneEnabled.setter
-    def headphoneEnabled(self, value:bool) -> None:
-        self.leftHeadphoneEnabled = self.rightHeadphoneEnabled = value
+    def headphone(self) -> bool:
+        return self.leftHeadphone and self.rightHeadphone
+    @headphone.setter
+    def headphone(self, value:bool) -> None:
+        self.leftHeadphone = self.rightHeadphone = value
 
     headphoneStandby = WOBit(_REG_ANTI_POP_1, 0)
 
@@ -961,32 +961,32 @@ class WM8960:
 
     ## Speakers
 
-    _leftSpeakerEnabled = WOBit(_REG_PWR_MGMT_2, 4)
-    _leftSpeakerAmpEnabled = WOBit(_REG_CLASS_D_CONTROL_1, 6)
+    _leftSpeaker = WOBit(_REG_PWR_MGMT_2, 4)
+    _leftSpeakerAmp = WOBit(_REG_CLASS_D_CONTROL_1, 6)
 
     @property
-    def leftSpeakerEnabled(self) -> bool:
-        return self._leftSpeakerEnabled and self._leftSpeakerAmpEnabled
-    @leftSpeakerEnabled.setter
-    def leftSpeakerEnabled(self, value:bool) -> None:
-        self._leftSpeakerEnabled = self._leftSpeakerAmpEnabled = value
+    def leftSpeaker(self) -> bool:
+        return self._leftSpeaker and self._leftSpeakerAmp
+    @leftSpeaker.setter
+    def leftSpeaker(self, value:bool) -> None:
+        self._leftSpeaker = self._leftSpeakerAmp = value
     
-    _rightSpeakerEnabled = WOBit(_REG_PWR_MGMT_2, 3)
-    _rightSpeakerAmpEnabled = WOBit(_REG_CLASS_D_CONTROL_1, 7)
+    _rightSpeaker = WOBit(_REG_PWR_MGMT_2, 3)
+    _rightSpeakerAmp = WOBit(_REG_CLASS_D_CONTROL_1, 7)
 
     @property
-    def rightSpeakerEnabled(self) -> bool:
-        return self._rightSpeakerEnabled and self._rightSpeakerAmpEnabled
-    @rightSpeakerEnabled.setter
-    def rightSpeakerEnabled(self, value:bool) -> None:
-        self._rightSpeakerEnabled = self._rightSpeakerAmpEnabled = value
+    def rightSpeaker(self) -> bool:
+        return self._rightSpeaker and self._rightSpeakerAmp
+    @rightSpeaker.setter
+    def rightSpeaker(self, value:bool) -> None:
+        self._rightSpeaker = self._rightSpeakerAmp = value
 
     @property
-    def speakerEnabled(self) -> bool:
-        return self.leftSpeakerEnabled and self.rightSpeakerEnabled
-    @speakerEnabled.setter
-    def speakerEnabled(self, value:bool) -> None:
-        self.leftSpeakerEnabled = self.rightSpeakerEnabled = value
+    def speaker(self) -> bool:
+        return self.leftSpeaker and self.rightSpeaker
+    @speaker.setter
+    def speaker(self, value:bool) -> None:
+        self.leftSpeaker = self.rightSpeaker = value
 
     _leftSpeakerVolume = WOBits(7, _REG_LOUT2_VOLUME, 0)
     _leftSpeakerVolumeSet = WOBit(_REG_LOUT2_VOLUME, 8)
@@ -1162,11 +1162,18 @@ class WM8960:
     def wordLength(self, value:int) -> None:
         self._wordLength = (min(value, 28) - 16) // 4
 
-    wordSelectInverted = WOBit(_REG_AUDIO_INTERFACE_1, 4)
+    wordSelectInvert = WOBit(_REG_AUDIO_INTERFACE_1, 4)
 
     adcChannelSwap = WOBit(_REG_AUDIO_INTERFACE_1, 8)
 
-    vrefOutputDisabled = WOBit(_REG_ADDITIONAL_CONTROL_3, 6)
+    _vrefOutputDisable = WOBit(_REG_ADDITIONAL_CONTROL_3, 6)
+
+    @property
+    def vrefOutput(self) -> bool:
+        return not self._vrefOutputDisable
+    @vrefOutput.setter
+    def vrefOutput(self, value:bool) -> None:
+        self._vrefOutputDisable = not value
 
     _vsel = WOBits(2, _REG_ADDITIONAL_CONTROL_1, 6)
 
@@ -1181,7 +1188,7 @@ class WM8960:
 
     gpioOutput = WOBit(_REG_AUDIO_INTERFACE_2, 6)
     gpioOutputMode = WOBits(3, _REG_ADDITIONAL_CONTROL_4, 4)
-    gpioOutputInverted = WOBit(_REG_ADDITIONAL_CONTROL_4, 7)
+    gpioOutputInvert = WOBit(_REG_ADDITIONAL_CONTROL_4, 7)
     
     _gpioClockDivider = WOBits(3, _REG_CLOCKING_2, 6)
 
