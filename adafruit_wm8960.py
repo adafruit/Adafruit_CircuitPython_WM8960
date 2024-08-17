@@ -310,182 +310,183 @@ class WM8960:
 
     vref = WOBit(_REG_PWR_MGMT_1, 6)
 
-    analog_input_left = WOBit(_REG_PWR_MGMT_1, 5)
-    analog_input_right = WOBit(_REG_PWR_MGMT_1, 4)
+    left_input = WOBit(_REG_PWR_MGMT_1, 5)
+    right_input = WOBit(_REG_PWR_MGMT_1, 4)
 
     @property
-    def analog_input(self) -> bool:
-        return self.analog_input_left and self.analog_input_right
-    @analog_input.setter
-    def analog_input(self, value:bool) -> None:
-        self.analog_input_left = self.analog_input_right = value
+    def input(self) -> bool:
+        return self.left_input and self.right_input
+    @input.setter
+    def input(self, value:bool) -> None:
+        self.left_input = self.right_input = value
 
     # MIC
     
     ## PWR_MGMT
 
-    mic_left = WOBit(_REG_PWR_MGMT_3, 5)
-    mic_right = WOBit(_REG_PWR_MGMT_3, 4)
+    left_mic = WOBit(_REG_PWR_MGMT_3, 5)
+    right_mic = WOBit(_REG_PWR_MGMT_3, 4)
 
     @property
     def mic(self) -> bool:
-        return self.mic_left and self.mic_right
+        return self.left_mic and self.right_mic
     @mic.setter
     def mic(self, value:bool) -> None:
-        self.mic_left = self.mic_right = value
+        self.left_mic = self.right_mic = value
 
     ## SIGNAL_PATH
 
-    _mic_input1_left = WOBit(_REG_ADCL_SIGNAL_PATH, 8)
-    _mic_input2_left = WOBit(_REG_ADCL_SIGNAL_PATH, 6)
-    _mic_input3_left = WOBit(_REG_ADCL_SIGNAL_PATH, 7)
+    left_mic_inverting_input = WOBit(_REG_ADCL_SIGNAL_PATH, 8)
+    right_mic_inverting_input = WOBit(_REG_ADCR_SIGNAL_PATH, 8)
 
-    _mic_input1_right = WOBit(_REG_ADCR_SIGNAL_PATH, 8)
-    _mic_input2_right = WOBit(_REG_ADCR_SIGNAL_PATH, 6)
-    _mic_input3_right = WOBit(_REG_ADCR_SIGNAL_PATH, 7)
+    _left_mic_input2 = WOBit(_REG_ADCL_SIGNAL_PATH, 6)
+    _left_mic_input3 = WOBit(_REG_ADCL_SIGNAL_PATH, 7)
 
     @property
-    def mic_signal_left(self) -> int:
-        if self._mic_input2_left:
+    def left_mic_input(self) -> int:
+        if self._left_mic_input2:
             return MIC_INPUT2
-        elif self._mic_input3_left:
+        elif self._left_mic_input3:
             return MIC_INPUT3
         else:
             return MIC_VMID
-    @mic_signal_left.setter
-    def mic_signal_left(self, signal:int) -> None:
-        self._mic_input2_left = signal == MIC_INPUT2
-        self._mic_input3_left = signal == MIC_INPUT3
+    @left_mic_input.setter
+    def left_mic_input(self, input:int) -> None:
+        self._left_mic_input2 = input == MIC_INPUT2
+        self._left_mic_input3 = input == MIC_INPUT3
+
+    _right_mic_input2 = WOBit(_REG_ADCR_SIGNAL_PATH, 6)
+    _right_mic_input3 = WOBit(_REG_ADCR_SIGNAL_PATH, 7)
     
     @property
-    def mic_signal_right(self) -> int:
-        if self._mic_input2_right:
+    def right_mic_input(self) -> int:
+        if self._right_mic_input2:
             return MIC_INPUT2
-        elif self._mic_input3_right:
+        elif self._right_mic_input3:
             return MIC_INPUT3
         else:
             return MIC_VMID
-    @mic_signal_right.setter
-    def mic_signal_right(self, signal:int) -> None:
-        self._mic_input2_right = signal == MIC_INPUT2
-        self._mic_input3_right = signal == MIC_INPUT3
+    @right_mic_input.setter
+    def right_mic_input(self, input:int) -> None:
+        self._right_mic_input2 = input == MIC_INPUT2
+        self._right_mic_input3 = input == MIC_INPUT3
 
     @property
-    def mic_signal(self) -> int:
+    def mic_input(self) -> int:
         # NOTE: Not checking right signal
-        return self.mic_signal_left
-    @mic_signal.setter
-    def mic_signal(self, signal:int) -> None:
-        self.mic_signal_left = self.mic_signal_right = signal
+        return self.left_mic_input
+    @mic_input.setter
+    def mic_input(self, input:int) -> None:
+        self.left_mic_input = self.right_mic_input = input
 
     ## Boost
 
-    mic_left_boost = WOBit(_REG_ADCL_SIGNAL_PATH, 3)
-    mic_right_boost = WOBit(_REG_ADCR_SIGNAL_PATH, 3)
+    left_mic_boost = WOBit(_REG_ADCL_SIGNAL_PATH, 3)
+    right_mic_boost = WOBit(_REG_ADCR_SIGNAL_PATH, 3)
 
     @property
     def mic_boost(self) -> None:
-        return self.mic_left_boost and self.mic_right_boost
+        return self.left_mic_boost and self.right_mic_boost
     @mic_boost.setter
     def mic_boost(self, value:int) -> None:
-        self.mic_left_boost = self.mic_right_boost = value
+        self.left_mic_boost = self.right_mic_boost = value
 
-    mic_boost_gain_left = WOBits(2, _REG_ADCL_SIGNAL_PATH, 4)
-    mic_boost_gain_right = WOBits(2, _REG_ADCR_SIGNAL_PATH, 4)
+    left_mic_boost_gain = WOBits(2, _REG_ADCL_SIGNAL_PATH, 4)
+    right_mic_boost_gain = WOBits(2, _REG_ADCR_SIGNAL_PATH, 4)
 
     @property
     def mic_boost_gain(self) -> None:
-        return max(self.mic_boost_gain_left, self.mic_boost_gain_right)
+        return max(self.left_mic_boost_gain, self.right_mic_boost_gain)
     @mic_boost_gain.setter
     def mic_boost_gain(self, value:int) -> None:
-        self.mic_gain_left = self.mic_gain_right = value
+        self.left_mic_boost_gain = self.right_mic_boost_gain = value
 
     ## Volume
 
-    _mic_left_volume = WOBits(6, _REG_LEFT_INPUT_VOLUME, 0)
-    _mic_left_volume_set = WOBit(_REG_LEFT_INPUT_VOLUME, 8)
+    _left_mic_volume = WOBits(6, _REG_LEFT_INPUT_VOLUME, 0)
+    _left_mic_volume_set = WOBit(_REG_LEFT_INPUT_VOLUME, 8)
 
-    _mic_right_volume = WOBits(6, _REG_RIGHT_INPUT_VOLUME, 0)
-    _mic_right_volume_set = WOBit(_REG_RIGHT_INPUT_VOLUME, 8)
+    _right_mic_volume = WOBits(6, _REG_RIGHT_INPUT_VOLUME, 0)
+    _right_mic_volume_set = WOBit(_REG_RIGHT_INPUT_VOLUME, 8)
 
     @property
-    def mic_left_volume(self) -> float:
-        return map_range(self._mic_left_volume, 0, 63, _MIC_GAIN_MIN, _MIC_GAIN_MAX)
-    @mic_left_volume.setter
-    def mic_left_volume(self, value:float) -> None:
-        self._mic_left_volume = round(map_range(value, _MIC_GAIN_MIN, _MIC_GAIN_MAX, 0, 63))
-        self._mic_left_volume_set = True
+    def left_mic_volume(self) -> float:
+        return map_range(self._left_mic_volume, 0, 63, _MIC_GAIN_MIN, _MIC_GAIN_MAX)
+    @left_mic_volume.setter
+    def left_mic_volume(self, value:float) -> None:
+        self._left_mic_volume = round(map_range(value, _MIC_GAIN_MIN, _MIC_GAIN_MAX, 0, 63))
+        self._left_mic_volume_set = True
     
     @property
-    def mic_right_volume(self) -> float:
-        return map_range(self._mic_right_volume, 0, 63, _MIC_GAIN_MIN, _MIC_GAIN_MAX)
-    @mic_right_volume.setter
-    def mic_right_volume(self, value:float) -> None:
-        self._mic_right_volume = round(map_range(value, _MIC_GAIN_MIN, _MIC_GAIN_MAX, 0, 63))
-        self._mic_right_volume_set = True
+    def right_mic_volume(self) -> float:
+        return map_range(self._right_mic_volume, 0, 63, _MIC_GAIN_MIN, _MIC_GAIN_MAX)
+    @right_mic_volume.setter
+    def right_mic_volume(self, value:float) -> None:
+        self._right_mic_volume = round(map_range(value, _MIC_GAIN_MIN, _MIC_GAIN_MAX, 0, 63))
+        self._right_mic_volume_set = True
     
     @property
     def mic_volume(self) -> float:
-        return max(self.mic_left_volume, self.mic_right_volume)
+        return max(self.left_mic_volume, self.right_mic_volume)
     @mic_volume.setter
     def mic_volume(self, value:float) -> None:
-        self._mic_left_volume = self._mic_right_volume = round(map_range(value, _MIC_GAIN_MIN, _MIC_GAIN_MAX, 0, 63))
-        self._mic_left_volume_set = self._mic_right_volume_set = True
+        self._left_mic_volume = self._right_mic_volume = round(map_range(value, _MIC_GAIN_MIN, _MIC_GAIN_MAX, 0, 63))
+        self._left_mic_volume_set = self._right_mic_volume_set = True
 
     ## Zero Cross
 
-    mic_left_zero_cross = WOBit(_REG_LEFT_INPUT_VOLUME, 6)
-    mic_right_zero_cross = WOBit(_REG_RIGHT_INPUT_VOLUME, 6)
+    left_mic_zero_cross = WOBit(_REG_LEFT_INPUT_VOLUME, 6)
+    right_mic_zero_cross = WOBit(_REG_RIGHT_INPUT_VOLUME, 6)
 
     @property
     def mic_zero_cross(self) -> bool:
-        return self.mic_left_zero_cross and self.mic_right_zero_cross
+        return self.left_mic_zero_cross and self.right_mic_zero_cross
     @mic_zero_cross.setter
     def mic_zero_cross(self, value:bool) -> None:
-        self.mic_left_zero_cross = self.mic_right_zero_cross = value
+        self.left_mic_zero_cross = self.right_mic_zero_cross = value
 
     ## Mute
 
-    _mic_left_mute = WOBit(_REG_LEFT_INPUT_VOLUME, 7)
-    _mic_right_mute = WOBit(_REG_RIGHT_INPUT_VOLUME, 7)
+    _left_mic_mute = WOBit(_REG_LEFT_INPUT_VOLUME, 7)
+    _right_mic_mute = WOBit(_REG_RIGHT_INPUT_VOLUME, 7)
 
     @property
-    def mic_left_mute(self) -> bool:
-        return self._mic_left_mute
-    @mic_left_mute.setter
-    def mic_left_mute(self, value:bool) -> None:
-        self._mic_left_mute = value
-        self._mic_left_volume_set = True
+    def left_mic_mute(self) -> bool:
+        return self._left_mic_mute
+    @left_mic_mute.setter
+    def left_mic_mute(self, value:bool) -> None:
+        self._left_mic_mute = value
+        self._left_mic_volume_set = True
 
     @property
-    def mic_right_mute(self) -> bool:
-        return self._mic_right_mute
-    @mic_right_mute.setter
-    def mic_right_mute(self, value:bool) -> None:
-        self._mic_right_mute = value
-        self._mic_right_volume_set = True
+    def right_mic_mute(self) -> bool:
+        return self._right_mic_mute
+    @right_mic_mute.setter
+    def right_mic_mute(self, value:bool) -> None:
+        self._right_mic_mute = value
+        self._right_mic_volume_set = True
 
     @property
     def mic_mute(self) -> bool:
-        return self._mic_left_mute and self._mic_right_mute
+        return self._left_mic_mute and self._right_mic_mute
     @mic_mute.setter
     def mic_mute(self, value:bool) -> None:
-        self._mic_left_mute = self._mic_right_mute = value
+        self._left_mic_mute = self._right_mic_mute = value
 
     # Boost Mixer
 
-    input2_left_boost = WOBits(3, _REG_INPUT_BOOST_MIXER_1, 1)
-    input2_right_boost = WOBits(3, _REG_INPUT_BOOST_MIXER_2, 1)
+    left_input2_boost = WOBits(3, _REG_INPUT_BOOST_MIXER_1, 1)
+    right_input2_boost = WOBits(3, _REG_INPUT_BOOST_MIXER_2, 1)
 
     @property
     def input2_boost(self) -> int:
-        return self.input2_left_boost
+        return self.left_input2_boost
     @input2_boost.setter
     def input2_boost(self, value:int) -> None:
-        self.input2_left_boost = self.input2_right_boost = value
+        self.left_input2_boost = self.right_input2_boost = value
 
-    input3_left_boost = WOBits(3, _REG_INPUT_BOOST_MIXER_1, 4)
-    input3_right_boost = WOBits(3, _REG_INPUT_BOOST_MIXER_2, 4)
+    left_input3_boost = WOBits(3, _REG_INPUT_BOOST_MIXER_1, 4)
+    right_input3_boost = WOBits(3, _REG_INPUT_BOOST_MIXER_2, 4)
 
     # Mic Bias
 
@@ -494,66 +495,66 @@ class WM8960:
 
     @property
     def input3_boost(self) -> int:
-        return self.input3_left_boost
+        return self.left_input3_boost
     @input3_boost.setter
     def input3_boost(self, value:int) -> None:
-        self.input3_left_boost = self.input3_right_boost = value
+        self.left_input3_boost = self.right_input3_boost = value
 
     # ADC
 
-    adc_left = WOBit(_REG_PWR_MGMT_1, 3)
-    adc_right = WOBit(_REG_PWR_MGMT_1, 2)
+    left_adc = WOBit(_REG_PWR_MGMT_1, 3)
+    right_adc = WOBit(_REG_PWR_MGMT_1, 2)
 
     @property
     def adc(self) -> bool:
-        return self.adc_left and self.adc_right
+        return self.left_adc and self.right_adc
     @adc.setter
     def adc(self, value:bool) -> None:
-        self.adc_left = self.adc_right = value
+        self.left_adc = self.right_adc = value
     
     ## Volume
 
-    _adc_left_volume = WOBits(8, _REG_LEFT_ADC_VOLUME, 0)
-    _adc_left_volume_set = WOBit(_REG_LEFT_ADC_VOLUME, 8)
+    _left_adc_volume = WOBits(8, _REG_LEFT_ADC_VOLUME, 0)
+    _left_adc_volume_set = WOBit(_REG_LEFT_ADC_VOLUME, 8)
 
     @property
-    def adc_left_volume(self) -> float:
-        return map_range(max(self._adc_left_volume, 1), 1, 255, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX)
-    @adc_left_volume.setter
-    def adc_left_volume(self, value:float) -> None:
-        self._adc_left_volume = round(map_range(value, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX, 0, 254) + 1.0)
-        self._adc_left_volume_set = True
+    def left_adc_volume(self) -> float:
+        return map_range(max(self._left_adc_volume, 1), 1, 255, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX)
+    @left_adc_volume.setter
+    def left_adc_volume(self, value:float) -> None:
+        self._left_adc_volume = round(map_range(value, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX, 0, 254) + 1.0)
+        self._left_adc_volume_set = True
 
-    _adc_right_volume = WOBits(8, _REG_RIGHT_ADC_VOLUME, 0)
-    _adc_right_volume_set = WOBit(_REG_RIGHT_ADC_VOLUME, 8)
+    _right_adc_volume = WOBits(8, _REG_RIGHT_ADC_VOLUME, 0)
+    _right_adc_volume_set = WOBit(_REG_RIGHT_ADC_VOLUME, 8)
 
     @property
-    def adc_right_volume(self) -> float:
-        return map_range(max(self._adc_right_volume, 1), 1, 255, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX)
-    @adc_right_volume.setter
-    def adc_right_volume(self, value:float) -> None:
-        self._adc_right_volume = round(map_range(value, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX, 0, 254) + 1.0)
-        self._adc_right_volume_set = True
+    def right_adc_volume(self) -> float:
+        return map_range(max(self._right_adc_volume, 1), 1, 255, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX)
+    @right_adc_volume.setter
+    def right_adc_volume(self, value:float) -> None:
+        self._right_adc_volume = round(map_range(value, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX, 0, 254) + 1.0)
+        self._right_adc_volume_set = True
 
     @property
     def adc_volume(self) -> int:
-        return max(self.adc_left_volume, self.adc_right_volume)
+        return max(self.left_adc_volume, self.right_adc_volume)
     @adc_volume.setter
     def adc_volume(self, value:float) -> None:
-        self._adc_left_volume = self._adc_right_volume = round(map_range(value, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX, 0, 254) + 1.0)
-        self._adc_left_volume_set = self._adc_right_volume_set = True
+        self._left_adc_volume = self._right_adc_volume = round(map_range(value, _ADC_VOLUME_MIN, _ADC_VOLUME_MAX, 0, 254) + 1.0)
+        self._left_adc_volume_set = self._right_adc_volume_set = True
 
     # ALC
 
-    alc_left = WOBit(_REG_ALC1, 7)
-    alc_right = WOBit(_REG_ALC1, 8)
+    left_alc = WOBit(_REG_ALC1, 7)
+    right_alc = WOBit(_REG_ALC1, 8)
 
     @property
     def alc(self) -> bool:
-        return self.alc_left and self.alc_right
+        return self.left_alc and self.right_alc
     @alc.setter
     def alc(self, value:bool) -> None:
-        self.alc_left = self.alc_right = value
+        self.left_alc = self.right_alc = value
 
     _alc_target = WOBits(4, _REG_ALC1, 0)
 
@@ -631,45 +632,45 @@ class WM8960:
 
     # DAC
 
-    dac_left = WOBit(_REG_PWR_MGMT_2, 8)
-    dac_right = WOBit(_REG_PWR_MGMT_2, 7)
+    left_dac = WOBit(_REG_PWR_MGMT_2, 8)
+    right_dac = WOBit(_REG_PWR_MGMT_2, 7)
 
     @property
     def dac(self) -> bool:
-        return self.dac_left and self.dac_right
+        return self.left_dac and self.right_dac
     @dac.setter
     def dac(self, value:bool) -> None:
-        self.dac_left = self.dac_right = value
+        self.left_dac = self.right_dac = value
     
-    _dac_left_volume = WOBits(8, _REG_LEFT_DAC_VOLUME, 0)
-    _dac_left_volume_set = WOBit(_REG_LEFT_DAC_VOLUME, 8)
+    _left_dac_volume = WOBits(8, _REG_LEFT_DAC_VOLUME, 0)
+    _left_dac_volume_set = WOBit(_REG_LEFT_DAC_VOLUME, 8)
 
     @property
-    def dac_left_volume(self) -> float:
-        return map_range(max(self._dac_left_volume, 1), 1, 255, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX)
-    @dac_left_volume.setter
-    def dac_left_volume(self, value:float) -> None:
-        self._dac_left_volume = round(map_range(value, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX, 0, 254) + 1.0)
-        self._dac_left_volume_set = True
+    def left_dac_volume(self) -> float:
+        return map_range(max(self._left_dac_volume, 1), 1, 255, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX)
+    @left_dac_volume.setter
+    def left_dac_volume(self, value:float) -> None:
+        self._left_dac_volume = round(map_range(value, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX, 0, 254) + 1.0)
+        self._left_dac_volume_set = True
 
-    _dac_right_volume = WOBits(8, _REG_RIGHT_DAC_VOLUME, 0)
-    _dac_right_volume_set = WOBit(_REG_RIGHT_DAC_VOLUME, 8)
+    _right_dac_volume = WOBits(8, _REG_RIGHT_DAC_VOLUME, 0)
+    _right_dac_volume_set = WOBit(_REG_RIGHT_DAC_VOLUME, 8)
 
     @property
-    def dac_right_volume(self) -> float:
-        return map_range(max(self._dac_right_volume, 1), 1, 255, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX)
-    @dac_right_volume.setter
-    def dac_right_volume(self, value:float) -> None:
-        self._dac_right_volume = round(map_range(value, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX, 0, 254) + 1.0)
-        self._dac_right_volume_set = True
+    def right_dac_volume(self) -> float:
+        return map_range(max(self._right_dac_volume, 1), 1, 255, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX)
+    @right_dac_volume.setter
+    def right_dac_volume(self, value:float) -> None:
+        self._right_dac_volume = round(map_range(value, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX, 0, 254) + 1.0)
+        self._right_dac_volume_set = True
 
     @property
     def dac_volume(self) -> int:
-        return max(self.dac_left_volume, self.dac_right_volume)
+        return max(self.left_dac_volume, self.right_dac_volume)
     @dac_volume.setter
     def dac_volume(self, value:float) -> None:
-        self._dac_left_volume = self._dac_right_volume = round(map_range(value, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX, 0, 254) + 1.0)
-        self._dac_left_volume_set = self._dac_right_volume_set = True
+        self._left_dac_volume = self._right_dac_volume = round(map_range(value, _DAC_VOLUME_MIN, _DAC_VOLUME_MAX, 0, 254) + 1.0)
+        self._left_dac_volume_set = self._right_dac_volume_set = True
 
     dac_mute = WOBit(_REG_ADC_DAC_CTRL_1, 3)
     dac_soft_mute = WOBit(_REG_ADC_DAC_CTRL_2, 3)
@@ -697,86 +698,86 @@ class WM8960:
 
     ## DAC Output
 
-    dac_left_output = WOBit(_REG_LEFT_OUT_MIX, 8)
-    dac_right_output = WOBit(_REG_RIGHT_OUT_MIX, 8)
+    left_dac_output = WOBit(_REG_LEFT_OUT_MIX, 8)
+    right_dac_output = WOBit(_REG_RIGHT_OUT_MIX, 8)
 
     @property
     def dac_output(self) -> bool:
-        return self.dac_left_output and self.dac_right_output
+        return self.left_dac_output and self.right_dac_output
     @dac_output.setter
     def dac_output(self, value:bool) -> None:
-        self.dac_left_output = self.dac_right_output = value
+        self.left_dac_output = self.right_dac_output = value
 
     ## Input 3 Output
 
-    input3_left_output = WOBit(_REG_LEFT_OUT_MIX, 7)
-    input3_right_output = WOBit(_REG_RIGHT_OUT_MIX, 7)
+    left_input3_output = WOBit(_REG_LEFT_OUT_MIX, 7)
+    right_input3_output = WOBit(_REG_RIGHT_OUT_MIX, 7)
     
     @property
     def input3_output(self) -> bool:
-        return self.input3_left_output and self.input3_right_output
+        return self.left_input3_output and self.right_input3_output
     @input3_output.setter
     def input3_output(self, value:bool) -> None:
-        self.input3_left_output = self.input3_right_output = value
+        self.left_input3_output = self.right_input3_output = value
 
-    _input3_left_output_volume = WOBits(3, _REG_LEFT_OUT_MIX, 4)
-
-    @property
-    def input3_left_output_volume(self) -> float:
-        return map_range(self._input3_left_output_volume, 0, 7, _OUTPUT_VOLUME_MAX, _OUTPUT_VOLUME_MIN)
-    @input3_left_output_volume.setter
-    def input3_left_output_volume(self, value:float) -> None:
-        self._input3_left_output_volume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
-
-    _input3_right_output_volume = WOBits(3, _REG_RIGHT_OUT_MIX, 4)
+    _left_input3_output_volume = WOBits(3, _REG_LEFT_OUT_MIX, 4)
 
     @property
-    def input3_right_output_volume(self) -> float:
-        return map_range(self._input3_right_output_volume, 0, 7, _OUTPUT_VOLUME_MAX, _OUTPUT_VOLUME_MIN)
-    @input3_right_output_volume.setter
-    def input3_right_output_volume(self, value:float) -> None:
-        self._input3_right_output_volume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+    def left_input3_output_volume(self) -> float:
+        return map_range(self._left_input3_output_volume, 0, 7, _OUTPUT_VOLUME_MAX, _OUTPUT_VOLUME_MIN)
+    @left_input3_output_volume.setter
+    def left_input3_output_volume(self, value:float) -> None:
+        self._left_input3_output_volume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+
+    _right_input3_output_volume = WOBits(3, _REG_RIGHT_OUT_MIX, 4)
+
+    @property
+    def right_input3_output_volume(self) -> float:
+        return map_range(self._right_input3_output_volume, 0, 7, _OUTPUT_VOLUME_MAX, _OUTPUT_VOLUME_MIN)
+    @right_input3_output_volume.setter
+    def right_input3_output_volume(self, value:float) -> None:
+        self._right_input3_output_volume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
 
     @property
     def input3_output_volume(self) -> float:
-        return max(self.input3_left_output_volume, self.input3_right_output_volume)
+        return max(self.left_input3_output_volume, self.right_input3_output_volume)
     @input3_output_volume.setter
     def input3_output_volume(self, value:float) -> None:
-        self._input3_left_output_volume = self._input3_right_output_volume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+        self._left_input3_output_volume = self._right_input3_output_volume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
 
     ## MIC Boost Mixer Output
 
-    mic_boost_left_output = WOBit(_REG_BYPASS_1, 7)
-    mic_boost_right_output = WOBit(_REG_BYPASS_2, 7)
+    left_mic_boost_output = WOBit(_REG_BYPASS_1, 7)
+    right_mic_boost_output = WOBit(_REG_BYPASS_2, 7)
 
     @property
     def mic_boost_output(self) -> bool:
-        return self.mic_boost_left_output and self.mic_boost_right_output
+        return self.left_mic_boost_output and self.right_mic_boost_output
 
-    _mic_boost_left_output_volume = WOBits(3, _REG_BYPASS_1, 4)
-
-    @property
-    def mic_boost_left_output_volume(self) -> float:
-        return map_range(self._mic_boost_left_output_volume, 0, 7, _OUTPUT_VOLUME_MAX, _OUTPUT_VOLUME_MIN)
-    @mic_boost_left_output_volume.setter
-    def mic_boost_left_output_volume(self, value:float) -> None:
-        self._mic_boost_left_output_volume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
-
-    _mic_boost_right_output_volume = WOBits(3, _REG_BYPASS_2, 4)
+    _left_mic_boost_output_volume = WOBits(3, _REG_BYPASS_1, 4)
 
     @property
-    def mic_boost_right_output_volume(self) -> float:
-        return map_range(self._mic_boost_right_output_volume, 0, 7, _OUTPUT_VOLUME_MAX, _OUTPUT_VOLUME_MIN)
-    @mic_boost_right_output_volume.setter
-    def mic_boost_right_output_volume(self, value:float) -> None:
-        self._mic_boost_right_output_volume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+    def left_mic_boost_output_volume(self) -> float:
+        return map_range(self._left_mic_boost_output_volume, 0, 7, _OUTPUT_VOLUME_MAX, _OUTPUT_VOLUME_MIN)
+    @left_mic_boost_output_volume.setter
+    def left_mic_boost_output_volume(self, value:float) -> None:
+        self._left_mic_boost_output_volume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+
+    _right_mic_boost_output_volume = WOBits(3, _REG_BYPASS_2, 4)
+
+    @property
+    def right_mic_boost_output_volume(self) -> float:
+        return map_range(self._right_mic_boost_output_volume, 0, 7, _OUTPUT_VOLUME_MAX, _OUTPUT_VOLUME_MIN)
+    @right_mic_boost_output_volume.setter
+    def right_mic_boost_output_volume(self, value:float) -> None:
+        self._right_mic_boost_output_volume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
 
     @property
     def mic_boost_output_volume(self) -> float:
-        return max(self.mic_boost_left_output_volume, self.mic_boost_right_output_volume)
+        return max(self.left_mic_boost_output_volume, self.right_mic_boost_output_volume)
     @mic_boost_output_volume.setter
     def mic_boost_output_volume(self, value:float) -> None:
-        self._mic_boost_left_output_volume = self._mic_boost_right_output_volume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
+        self._left_mic_boost_output_volume = self._right_mic_boost_output_volume = round(map_range(value, _OUTPUT_VOLUME_MIN, _OUTPUT_VOLUME_MAX, 7, 0))
 
     ## Mono Output
 
