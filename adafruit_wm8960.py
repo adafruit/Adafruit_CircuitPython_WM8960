@@ -1023,18 +1023,18 @@ class WM8960:
 
     master_mode = WOBit(_REG_AUDIO_INTERFACE_1, 6)
 
-    _word_length = WOBits(2, _REG_AUDIO_INTERFACE_1, 2)
+    _bit_depth = WOBits(2, _REG_AUDIO_INTERFACE_1, 2)
 
     @property
-    def word_length(self) -> int:
-        value = self._word_length
+    def bit_depth(self) -> int:
+        value = self._bit_depth
         if value == 3:
             return 32
         else:
             return 16 + 4 * value
-    @word_length.setter
-    def word_length(self, value:int) -> None:
-        self._word_length = (min(value, 28) - 16) // 4
+    @bit_depth.setter
+    def bit_depth(self, value:int) -> None:
+        self._bit_depth = (min(value, 28) - 16) // 4
 
     word_select_invert = WOBit(_REG_AUDIO_INTERFACE_1, 4)
 
