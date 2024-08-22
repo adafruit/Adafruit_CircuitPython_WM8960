@@ -809,37 +809,40 @@ class WM8960:
 
     ## MIC Boost Mixer Output
 
-    left_mic_boost_output = WOBit(_REG_BYPASS_1, 7)
-    right_mic_boost_output = WOBit(_REG_BYPASS_2, 7)
+    left_mic_output = WOBit(_REG_BYPASS_1, 7)
+    right_mic_output = WOBit(_REG_BYPASS_2, 7)
 
     @property
-    def mic_boost_output(self) -> bool:
-        return self.left_mic_boost_output and self.right_mic_boost_output
+    def mic_output(self) -> bool:
+        return self.left_mic_output and self.right_mic_output
+    @mic_output.setter
+    def mic_output(self, value:bool) -> None:
+        self.left_mic_output = self.right_mic_output = value
 
-    _left_mic_boost_output_volume = WOBits(3, _REG_BYPASS_1, 4)
-
-    @property
-    def left_mic_boost_output_volume(self) -> float:
-        return map_range(self._left_mic_boost_output_volume, 0, 7, OUTPUT_VOLUME_MAX, OUTPUT_VOLUME_MIN)
-    @left_mic_boost_output_volume.setter
-    def left_mic_boost_output_volume(self, value:float) -> None:
-        self._left_mic_boost_output_volume = round(map_range(value, OUTPUT_VOLUME_MIN, OUTPUT_VOLUME_MAX, 7, 0))
-
-    _right_mic_boost_output_volume = WOBits(3, _REG_BYPASS_2, 4)
+    _left_mic_output_volume = WOBits(3, _REG_BYPASS_1, 4)
 
     @property
-    def right_mic_boost_output_volume(self) -> float:
-        return map_range(self._right_mic_boost_output_volume, 0, 7, OUTPUT_VOLUME_MAX, OUTPUT_VOLUME_MIN)
-    @right_mic_boost_output_volume.setter
-    def right_mic_boost_output_volume(self, value:float) -> None:
-        self._right_mic_boost_output_volume = round(map_range(value, OUTPUT_VOLUME_MIN, OUTPUT_VOLUME_MAX, 7, 0))
+    def left_mic_output_volume(self) -> float:
+        return map_range(self._left_mic_output_volume, 0, 7, OUTPUT_VOLUME_MAX, OUTPUT_VOLUME_MIN)
+    @left_mic_output_volume.setter
+    def left_mic_output_volume(self, value:float) -> None:
+        self._left_mic_output_volume = round(map_range(value, OUTPUT_VOLUME_MIN, OUTPUT_VOLUME_MAX, 7, 0))
+
+    _right_mic_output_volume = WOBits(3, _REG_BYPASS_2, 4)
 
     @property
-    def mic_boost_output_volume(self) -> float:
-        return max(self.left_mic_boost_output_volume, self.right_mic_boost_output_volume)
-    @mic_boost_output_volume.setter
-    def mic_boost_output_volume(self, value:float) -> None:
-        self._left_mic_boost_output_volume = self._right_mic_boost_output_volume = round(map_range(value, OUTPUT_VOLUME_MIN, OUTPUT_VOLUME_MAX, 7, 0))
+    def right_mic_output_volume(self) -> float:
+        return map_range(self._right_mic_output_volume, 0, 7, OUTPUT_VOLUME_MAX, OUTPUT_VOLUME_MIN)
+    @right_mic_output_volume.setter
+    def right_mic_output_volume(self, value:float) -> None:
+        self._right_mic_output_volume = round(map_range(value, OUTPUT_VOLUME_MIN, OUTPUT_VOLUME_MAX, 7, 0))
+
+    @property
+    def mic_output_volume(self) -> float:
+        return max(self.left_mic_output_volume, self.right_mic_output_volume)
+    @mic_output_volume.setter
+    def mic_output_volume(self, value:float) -> None:
+        self._left_mic_output_volume = self._right_mic_output_volume = round(map_range(value, OUTPUT_VOLUME_MIN, OUTPUT_VOLUME_MAX, 7, 0))
 
     ## Mono Output
 
