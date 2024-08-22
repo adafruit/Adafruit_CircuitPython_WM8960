@@ -99,27 +99,12 @@ MIC_INPUT3 = 1
 MIC_VMID = 2
 
 # Microphone Boost gain options
-MIC_BOOST_GAIN_0DB = 0
-MIC_BOOST_GAIN_13DB = 1
-MIC_BOOST_GAIN_20DB = 2
-MIC_BOOST_GAIN_29DB = 3
-
-'''
-Boost Mixer gain options
-These are used to control the gain (aka volume) at the following settings:
-LIN2BOOST
-LIN3BOOST
-RIN2BOOST
-RIN3BOOST
-'''
-BOOST_MIXER_GAIN_MUTE = 0
-BOOST_MIXER_GAIN_NEG_12DB = 1
-BOOST_MIXER_GAIN_NEG_9DB = 2
-BOOST_MIXER_GAIN_NEG_6DB = 3
-BOOST_MIXER_GAIN_NEG_3DB = 4
-BOOST_MIXER_GAIN_0DB = 5
-BOOST_MIXER_GAIN_3DB = 6
-BOOST_MIXER_GAIN_6DB = 7
+_MIC_BOOST_GAIN = [ # in dB
+    0.0,  # 0
+    13.0, # 1
+    20.0, # 2
+    29.0  # 3
+]
 
 # Mic Bias voltage options
 MIC_BIAS_VOLTAGE_0_9_AVDD = 0
@@ -129,7 +114,10 @@ MIC_BIAS_VOLTAGE_0_65_AVDD = 1
 _SYSCLK_DIV_BY_1 = const(0)
 _SYSCLK_DIV_BY_2 = const(2)
 
-# Gain/Level mins, maxes, offsets and step-sizes
+# Gain/Level min/max
+BOOST_GAIN_MIN = -12.00
+BOOST_GAIN_MAX = 6.0
+
 MIC_GAIN_MIN = -17.25
 MIC_GAIN_MAX = 30.00
 
@@ -170,12 +158,14 @@ ALC_HOLD_TIME_MIN = 0.00267
 ALC_HOLD_TIME_MAX = 43.691
 
 # Speaker Boost Gains (DC and AC)
-SPEAKER_BOOST_GAIN_0DB = 0
-SPEAKER_BOOST_GAIN_2_1DB = 1
-SPEAKER_BOOST_GAIN_2_9DB = 2
-SPEAKER_BOOST_GAIN_3_6DB = 3
-SPEAKER_BOOST_GAIN_4_5DB = 4
-SPEAKER_BOOST_GAIN_5_1DB = 5
+_SPEAKER_BOOST_GAIN = [ # in dB
+    0.0, # 0
+    2.1, # 1
+    2.9, # 2
+    3.6, # 3
+    4.5, # 4
+    5.1  # 5
+]
 
 # VMIDSEL settings
 VMIDSEL_DISABLED = 0
@@ -391,15 +381,36 @@ class WM8960:
     def mic_boost(self, value:int) -> None:
         self.left_mic_boost = self.right_mic_boost = value
 
-    left_mic_boost_gain = WOBits(2, _REG_ADCL_SIGNAL_PATH, 4)
-    right_mic_boost_gain = WOBits(2, _REG_ADCR_SIGNAL_PATH, 4)
+    def _get_mic_boost_gain(self, value:float) -> int:
+        for i in reversed(range(len(_MIC_BOOST_GAIN))):
+            if value >= _MIC_BOOST_GAIN[i]:
+                return i
+        return 0
+    
+    _left_mic_boost_gain = WOBits(2, _REG_ADCL_SIGNAL_PATH, 4)
+
+    @property
+    def left_mic_boost_gain(self) -> float:
+        return _MIC_BOOST_GAIN[self._left_mic_boost_gain]
+    @left_mic_boost_gain.setter
+    def left_mic_boost_gain(self, value:float) -> None:
+        self._left_mic_boost_gain = self._get_mic_boost_gain(value)
+
+    _right_mic_boost_gain = WOBits(2, _REG_ADCR_SIGNAL_PATH, 4)
+
+    @property
+    def right_mic_boost_gain(self) -> float:
+        return _MIC_BOOST_GAIN[self._right_mic_boost_gain]
+    @right_mic_boost_gain.setter
+    def right_mic_boost_gain(self, value:float) -> None:
+        self._right_mic_boost_gain = self._get_mic_boost_gain(value)
 
     @property
     def mic_boost_gain(self) -> None:
         return max(self.left_mic_boost_gain, self.right_mic_boost_gain)
     @mic_boost_gain.setter
-    def mic_boost_gain(self, value:int) -> None:
-        self.left_mic_boost_gain = self.right_mic_boost_gain = value
+    def mic_boost_gain(self, value:float) -> None:
+        self._left_mic_boost_gain = self._right_mic_boost_gain = self._get_mic_boost_gain(value)
 
     ## Volume
 
@@ -475,30 +486,74 @@ class WM8960:
 
     # Boost Mixer
 
-    left_input2_boost = WOBits(3, _REG_INPUT_BOOST_MIXER_1, 1)
-    right_input2_boost = WOBits(3, _REG_INPUT_BOOST_MIXER_2, 1)
+    _left_input2_boost = WOBits(3, _REG_INPUT_BOOST_MIXER_1, 1)
 
     @property
-    def input2_boost(self) -> int:
-        return self.left_input2_boost
-    @input2_boost.setter
-    def input2_boost(self, value:int) -> None:
-        self.left_input2_boost = self.right_input2_boost = value
+    def left_input2_boost(self) -> float:
+        value = self._left_input2_boost
+        if value == 0:
+            return None
+        return map_range(max(value, 1), 1, 7, BOOST_GAIN_MIN, BOOST_GAIN_MAX)
+    @left_input2_boost.setter
+    def left_input2_boost(self, value:float) -> None:
+        self._left_input2_boost = 0 if value < BOOST_GAIN_MIN else round(map_range(value, BOOST_GAIN_MIN, BOOST_GAIN_MAX, 1, 7))
 
-    left_input3_boost = WOBits(3, _REG_INPUT_BOOST_MIXER_1, 4)
-    right_input3_boost = WOBits(3, _REG_INPUT_BOOST_MIXER_2, 4)
+    _right_input2_boost = WOBits(3, _REG_INPUT_BOOST_MIXER_2, 1)
+
+    @property
+    def right_input2_boost(self) -> float:
+        value = self._right_input2_boost
+        if value == 0:
+            return None
+        return map_range(max(value, 1), 1, 7, BOOST_GAIN_MIN, BOOST_GAIN_MAX)
+    @right_input2_boost.setter
+    def right_input2_boost(self, value:float) -> None:
+        self._right_input2_boost = 0 if value < BOOST_GAIN_MIN else round(map_range(value, BOOST_GAIN_MIN, BOOST_GAIN_MAX, 1, 7))
+
+    @property
+    def input2_boost(self) -> float:
+        value = max(self._left_input2_boost, self._right_input2_boost)
+        return None if value is 0 else map_range(max(value, 1), 1, 7, BOOST_GAIN_MIN, BOOST_GAIN_MAX)
+    @input2_boost.setter
+    def input2_boost(self, value:float) -> None:
+        self._left_input2_boost = self._right_input2_boost = 0 if value < BOOST_GAIN_MIN else round(map_range(value, BOOST_GAIN_MIN, BOOST_GAIN_MAX, 1, 7))
+
+    _left_input3_boost = WOBits(3, _REG_INPUT_BOOST_MIXER_1, 4)
+
+    @property
+    def left_input3_boost(self) -> float:
+        value = self._left_input3_boost
+        if value == 0:
+            return None
+        return map_range(max(value, 1), 1, 7, BOOST_GAIN_MIN, BOOST_GAIN_MAX)
+    @left_input3_boost.setter
+    def left_input3_boost(self, value:float) -> None:
+        self._left_input3_boost = 0 if value < BOOST_GAIN_MIN else round(map_range(value, BOOST_GAIN_MIN, BOOST_GAIN_MAX, 1, 7))
+
+    _right_input3_boost = WOBits(3, _REG_INPUT_BOOST_MIXER_2, 4)
+
+    @property
+    def right_input3_boost(self) -> float:
+        value = self._right_input3_boost
+        if value == 0:
+            return None
+        return map_range(max(value, 1), 1, 7, BOOST_GAIN_MIN, BOOST_GAIN_MAX)
+    @right_input3_boost.setter
+    def right_input3_boost(self, value:float) -> None:
+        self._right_input3_boost = 0 if value < BOOST_GAIN_MIN else round(map_range(value, BOOST_GAIN_MIN, BOOST_GAIN_MAX, 1, 7))
+
+    @property
+    def input3_boost(self) -> float:
+        value = max(self._left_input3_boost, self._right_input3_boost)
+        return None if value is 0 else map_range(max(value, 1), 1, 7, BOOST_GAIN_MIN, BOOST_GAIN_MAX)
+    @input3_boost.setter
+    def input3_boost(self, value:float) -> None:
+        self._left_input3_boost = self._right_input3_boost = 0 if value < BOOST_GAIN_MIN else round(map_range(value, BOOST_GAIN_MIN, BOOST_GAIN_MAX, 1, 7))
 
     # Mic Bias
 
     mic_bias = WOBit(_REG_PWR_MGMT_1, 1)
     mic_bias_voltage = WOBit(_REG_ADDITIONAL_CONTROL_4, 0)
-
-    @property
-    def input3_boost(self) -> int:
-        return self.left_input3_boost
-    @input3_boost.setter
-    def input3_boost(self, value:int) -> None:
-        self.left_input3_boost = self.right_input3_boost = value
 
     # ADC
 
@@ -922,23 +977,29 @@ class WM8960:
     def speaker_zero_cross(self, value:bool) -> None:
         self.left_speaker_zero_cross = self.right_speaker_zero_cross = value
 
+    def _get_speaker_boost_gain(self, value:float) -> int:
+        for i in reversed(range(len(_SPEAKER_BOOST_GAIN))):
+            if value >= _SPEAKER_BOOST_GAIN[i]:
+                return i
+        return 0
+
     _speaker_dc_gain = WOBits(3, _REG_CLASS_D_CONTROL_3, 3)
 
     @property
-    def speaker_dc_gain(self) -> int:
-        return self._speaker_dc_gain
+    def speaker_dc_gain(self) -> float:
+        return _SPEAKER_BOOST_GAIN[self._speaker_dc_gain]
     @speaker_dc_gain.setter
-    def speaker_dc_gain(self, value:int) -> None:
-        self._speaker_dc_gain = min(value, 5)
+    def speaker_dc_gain(self, value:float) -> None:
+        self._speaker_dc_gain = self._get_speaker_boost_gain(value)
 
     _speaker_ac_gain = WOBits(3, _REG_CLASS_D_CONTROL_3, 0)
 
     @property
-    def speaker_ac_gain(self) -> int:
-        return self._speaker_ac_gain
+    def speaker_ac_gain(self) -> float:
+        return _SPEAKER_BOOST_GAIN[self._speaker_ac_gain]
     @speaker_ac_gain.setter
-    def speaker_ac_gain(self, value:int) -> None:
-        self._speaker_ac_gain = min(value, 5)
+    def speaker_ac_gain(self, value:float) -> None:
+        self._speaker_ac_gain = self._get_speaker_boost_gain(value)
 
     # Digital Audio Interface Control
 
