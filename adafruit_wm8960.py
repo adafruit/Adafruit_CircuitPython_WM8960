@@ -739,12 +739,20 @@ class WM8960:
     dac_slow_soft_mute = WOBit(_REG_ADC_DAC_CTRL_2, 2)
     dac_attenuation = WOBit(_REG_ADC_DAC_CTRL_1, 7)
 
-    # 3_d Enhance
+    # 3D Enhance
 
     enhance = WOBit(_REG_3D_CONTROL, 0)
-    enhance_depth = WOBits(4, _REG_3D_CONTROL, 1)
     enhance_filter_lPF = WOBit(_REG_3D_CONTROL, 6)
     enhance_filter_hPF = WOBit(_REG_3D_CONTROL, 5)
+
+    _enhance_depth = WOBits(4, _REG_3D_CONTROL, 1)
+
+    @property
+    def enhance_depth(self) -> float:
+        return self._enhance_depth / 15.0
+    @enhance_depth.setter
+    def enhance_depth(self, value:float) -> None:
+        self._enhance_depth = round(map_range(value, 0.0, 1.0, 0, 15))
 
     # Output Mixer
 
