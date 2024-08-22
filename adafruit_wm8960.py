@@ -382,10 +382,10 @@ class WM8960:
     right_mic_boost = WOBit(_REG_ADCR_SIGNAL_PATH, 3)
 
     @property
-    def mic_boost(self) -> None:
+    def mic_boost(self) -> bool:
         return self.left_mic_boost and self.right_mic_boost
     @mic_boost.setter
-    def mic_boost(self, value:int) -> None:
+    def mic_boost(self, value:bool) -> None:
         self.left_mic_boost = self.right_mic_boost = value
 
     def _get_mic_boost_gain(self, value:float) -> int:
@@ -413,7 +413,7 @@ class WM8960:
         self._right_mic_boost_gain = self._get_mic_boost_gain(value)
 
     @property
-    def mic_boost_gain(self) -> None:
+    def mic_boost_gain(self) -> float:
         return max(self.left_mic_boost_gain, self.right_mic_boost_gain)
     @mic_boost_gain.setter
     def mic_boost_gain(self, value:float) -> None:
