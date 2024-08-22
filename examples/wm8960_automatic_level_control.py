@@ -59,90 +59,71 @@ from analogio import AnalogIn
 from adafruit_simplemath import map_range
 import adafruit_wm8960
 
-print("Example 12 - Automatic Level Control")
-
-# Used to store incoming potentiometer settings to set ADC digital volume setting
-userInputA0 = 0
 analog_in = AnalogIn(board.A0)
 
 codec = adafruit_wm8960.WM8960(board.I2C())
 
 # Setup signal flow to the ADC
-codec.enableMIC()
+codec.mic = True
 
-# Connect from INPUT1 to "n" (aka inverting) inputs of PGAs.
-codec.connectMN1()
+# Connect from INPUT1 to "n" (aka inverting) inputs of PGAs
+codec.mic_inverting_input = True
 
 # Disable mutes on PGA inputs (aka INTPUT1)
-codec.disableINMUTE()
+codec.mic_mute = False
 
 # Set input boosts to get inputs 1 to the boost mixers
-codec.setMICBOOST(adafruit_wm8960.MIC_BOOST_GAIN_0DB)
-codec.connectMIC2B()
-
-# Enable boost mixers
-codec.enableAIN()
+codec.mic_boost_gain = adafruit_wm8960.MIC_BOOST_GAIN_0DB
+codec.mic_boost = True
+codec.input = True # Enable boost mixers
 
 # Disconnect LB2LO (booster to output mixer (analog bypass)
 # For this example, we are going to pass audio throught the ADC and DAC
-codec.disableB2O()
+codec.mic_output = False
 
 # Connect from DAC outputs to output mixer
-codec.enableD2O()
+codec.dac_output = True
 
 # Set gainstage between booster mixer and output mixer
 # For this loopback example, we are going to keep these as low as they go
-codec.setB2OVOL(adafruit_wm8960.OUTPUT_MIXER_GAIN_NEG_21DB)
+codec.mic_output_volume = adafruit_wm8960.OUTPUT_VOLUME_MIN
 
 # Enable output mixers
-codec.enableOMIX()
+codec.output = True
 
 # Setup clock and mode
-codec.setSampleRate(44100)
-codec.enableMasterMode()
-codec.setALRCGPIO() # Note, should not be changed while ADC is enabled.
+codec.sample_rate = 44100
+codec.master_mode = True
+codec.gpio_output = True # Note, should not be changed while ADC is enabled.
 
 # Enable ADCs and DACs
-codec.enableAdc()
-codec.enableDac()
+codec.adc = codec.dac = True
 
 # Loopback sends ADC data directly into DAC
-codec.enableLoopBack()
+codec.loopback = True
 
 # Default is "soft mute" on, so we must disable mute to make channels active
-codec.disableDacMute()
+codec.dac_mute = False
 
-print("Headphopne Amp Volume set to +0dB")
-codec.configureHeadphones(dB=0.0, capless=True) # Capless provides VMID as buffer for headphone ground
+# Enable headphone amp output
+codec.headphone = True
+codec.headphone_volume = 0.0
+codec.mono_output = True # Enables capless mode using the VMID as buffer for headphone ground on OUT3
 
-# Automatic Level control stuff
+# Automatic Level control configuration
 
-# Only allows pga gain stages at a "zero crossover" point in audio stream.
+# Only allows mic gain stages at a "zero crossover" point in audio stream.
 # Minimizes "zipper" noise when chaning gains.
-codec.enablePgaZeroCross()
+codec.mic_zero_cross = True
 
-codec.enableAlc(adafruit_wm8960.ALC_MODE_STEREO)
-codec.setAlcTarget(adafruit_wm8960.ALC_TARGET_LEVEL_NEG_6DB)
-codec.setAlcDecay(adafruit_wm8960.ALC_DECAY_TIME_192MS)
-codec.setAlcAttack(adafruit_wm8960.ALC_ATTACK_TIME_24MS)
-codec.setAlcMaxGain(adafruit_wm8960.ALC_MAX_GAIN_LEVEL_30DB)
-codec.setAlcMinGain(adafruit_wm8960.ALC_MIN_GAIN_LEVEL_NEG_17_25DB)
-codec.setAlcHold(adafruit_wm8960.ALC_HOLD_TIME_0MS)
-
-print("Codec setup complete. Listen to left/right INPUT1 on Headphone outputs.")
+codec.alc = True
+codec.alc_target = -6.0
+codec.alc_attack_time = 0.024
+codec.alc_hold_time = 0.0
+codec.alc_decay_time = 0.192
+codec.alc_max_gain = adafruit_wm8960.ALC_MAX_GAIN_MAX
+codec.alc_min_gain = adafruit_wm8960.ALC_MIN_GAIN_MIN
 
 while True:
-    # Take a bunch of readings and average them, to smooth out the value
-    for i in range(250):
-        userInputA0 += analog_in.value
-        time.sleep(0.001)
-    userInputA0 /= 250.0
-
-    # Map it from 0-4096, to a value that is acceptable for the setting
-    alcTarget = map_range(userInputA0, 0.0, 65536.0, 15.0, 0.0)
-
-    print("alcTarget: ", alcTarget)
-
-    codec.setAlcTarget(alcTarget) # Valid inputs are 0-15, 0 = -22.5dB FS, ... 1.5dB steps ... , 15 = -1.5dB FS
-
+    codec.alc_target = map_range(analog_in.value, 0, 65536, adafruit_wm8960.ALC_TARGET_MIN, adafruit_wm8960.ALC_TARGET_MAX)
     time.sleep(1.0)

@@ -49,28 +49,41 @@ https://github.com/sparkfun/SparkFun_Audio_Codec_Breakout_WM8960/blob/main/Docum
 import board
 import adafruit_wm8960
 
-print("Example 2 - INPUT2")
-
 codec = adafruit_wm8960.WM8960(board.I2C())
 
 # Setup signal flow through the analog audio bypass connections
 
-# Set input boosts to get INPUT2 (both left and right) to the boost mixers
-codec.setIN2BOOST(adafruit_wm8960.BOOST_MIXER_GAIN_0DB)
+# INPUT1 must pass through the Mic Boost
+codec.mic = True
+codec.mic_inverting_input = True
+codec.mic_input = adafruit_wm8960.MIC_VMID # Non-inverting input
+codec.mic_mute = False
+codec.mic_boost_gain = 0.0
+codec.mic_boost = True
+codec.mic_volume = 0.0
+
+# In order to use INPUT2 or INPUT3 with the Mic Boost (PGA)
+#codec.mic_input = adafruit_wm8960.MIC_INPUT2
+#codec.mic_input = adafruit_wm8960.MIC_INPUT3
+# If codec.mic_inverting_input is enabled, mic boost uses input as balanced input between INPUT1 & INPUT2/3
+
+# Set input boosts to get INPUT2 or INPUT3 (both left and right) to the boost mixers and bypass the Mic Boost (PGA)
+codec.input2_boost = 0.0
+codec.input3_boost = 0.0
 
 # Enable input boost mixers
-codec.enableAIN()
+codec.input = True
 
 # Connect LB2LO (booster to output mixer [aka analog bypass])
-codec.enableB2O()
+codec.mic_output = True
 
 # Set gainstage between boost mixer and output mixers (analog bypass)
-codec.setB2OVOL(adafruit_wm8960.OUTPUT_MIXER_GAIN_0DB)
+codec.mic_output_volume = 0.0
 
 # Enable output mixers
-codec.enableOMIX()
+codec.output = True
 
-print("Volume set to +0dB")
-codec.configureHeadphones(dB=0.0, capless=True) # Capless provides VMID as buffer for headphone ground
-
-print("Example complete. Listen to inputs 2 on headphone outputs.")
+# Enable Headphone Amp with OUT3 as capless buffer for headphone ground
+codec.headphone = True
+codec.mono_output = True
+codec.headphone_volume = 0.0

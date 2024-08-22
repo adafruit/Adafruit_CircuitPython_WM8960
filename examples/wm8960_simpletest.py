@@ -61,6 +61,10 @@ codec.headphone = True
 codec.mono_output = True
 codec.headphone_volume = 0.0
 
+# Enable Speaker Amp
+codec.speaker = True
+codec.speaker_volume = 0.0
+
 # Configure I2S Output
 audio = audiobusio.I2SOut(board.AUDIO_BCLK, board.AUDIO_SYNC, board.AUDIO_TXD)
 

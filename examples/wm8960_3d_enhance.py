@@ -4,16 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 '''
-Demonstrates 3D Enhance feature of WM8960 Codec.
-
-Toggles on/off 3D Enhance every 5 seconds, so you can hear the difference.
-
-Note, it also sets the 3D enhance Depth setting to 15 (max).
-You can change this to your desired depth from 0-15.
-
-Note, this is very similar to the Loopback example, but also demos the 3D Enhance feature.
-
-Sets up analog audio input (on INPUT1s), ADC/DAC Loopback, sets volume control, and Headphone output on the WM8960 Codec.
+Demonstrates analog audio input (on INPUT1s), ADC/DAC Loopback, sets volume control, and Headphone output on the WM8960 Codec.
 
 Audio should be connected to both the left and right "INPUT1" inputs, they are labeled "RIN1" and "LIN1" on the board.
 
@@ -57,68 +48,58 @@ https://github.com/sparkfun/SparkFun_Audio_Codec_Breakout_WM8960/blob/main/Docum
 import board, time
 import adafruit_wm8960
 
-print("Example 6 - 3D Enhance")
-
 codec = adafruit_wm8960.WM8960(board.I2C())
 
 # Setup signal flow to the ADC
-codec.enableMIC()
+codec.mic = True
 
 # Connect from INPUT1 to "n" (aka inverting) inputs of PGAs.
-codec.connectMN1()
+codec.mic_inverting_input = True
 
 # Disable mutes on PGA inputs (aka INTPUT1)
-codec.disableINMUTE()
+codec.mic_mute = False
 
 # Set input boosts to get inputs 1 to the boost mixers
-codec.setMICBOOST(adafruit_wm8960.MIC_BOOST_GAIN_0DB)
-codec.connectMIC2B()
-
-# Enable boost mixers
-codec.enableAIN()
+codec.mic_boost_gain = 0.0
+codec.mic_boost = True
 
 # Disconnect LB2LO (booster to output mixer (analog bypass)
 # For this example, we are going to pass audio throught the ADC and DAC
-codec.disableB2O()
+codec.mic_output = False
 
 # Connect from DAC outputs to output mixer
-codec.enableD2O()
+codec.dac_output = True
 
 # Set gainstage between booster mixer and output mixer
 # For this loopback example, we are going to keep these as low as they go
-codec.setB2OVOL(adafruit_wm8960.OUTPUT_MIXER_GAIN_NEG_21DB)
+codec.mic_output_volume = adafruit_wm8960.OUTPUT_VOLUME_MIN
 
 # Enable output mixers
-codec.enableOMIX()
+codec.output = True
 
 # Setup sample rate
-codec.setSampleRate(44100)
-codec.enableMasterMode()
-codec.setALRCGPIO() # Note, should not be changed while ADC is enabled.
+codec.sample_rate = 44100
+codec.master_mode = True
+codec.gpio_output = True # Note, should not be changed while ADC is enabled.
 
 # Enable ADCs and DACs
-codec.enableAdc()
-codec.enableDac()
+codec.adc = codec.dac = True
 
 # Loopback sends ADC data directly into DAC
-codec.enableLoopBack()
+codec.loopback = True
 
 # Default is "soft mute" on, so we must disable mute to make channels active
-codec.disableDacMute()
+codec.dac_mute = False
 
-print("Volume set to +0dB")
-codec.configureHeadphones(dB=0.0, capless=True) # Capless provides VMID as buffer for headphone ground
+# Enable Headphone Amp with OUT3 as capless buffer for headphone ground
+codec.headphone = True
+codec.mono_output = True
+codec.headphone_volume = 0.0
 
-print("3D Enhance Depth set to 15 (max)")
-codec.set3dDepth(15)
+# Set 3D enhance depth to max (0.0 - 1.0)
+codec.enhance_depth = 1.0
 
-print("Listen to left/right INPUT1 on Headphone outputs with toggling 3D enhance!")
-
+# Toggle 3D enhance on and off
 while True:
-    codec.enable3d()
-    print("3D Enhance enabled")
-    time.sleep(5.0)
-
-    codec.disable3d()
-    print("3D Enhance disabled")
-    time.sleep(5.0)
+    codec.enhance = not codec.enhance
+    time.sleep(2.0)
