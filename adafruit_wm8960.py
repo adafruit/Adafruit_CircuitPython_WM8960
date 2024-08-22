@@ -329,6 +329,13 @@ class WM8960:
     left_mic_inverting_input = WOBit(_REG_ADCL_SIGNAL_PATH, 8)
     right_mic_inverting_input = WOBit(_REG_ADCR_SIGNAL_PATH, 8)
 
+    @property
+    def mic_inverting_input(self) -> bool:
+        return self.left_mic_inverting_input and self.right_mic_inverting_input
+    @mic_inverting_input.setter
+    def mic_inverting_input(self, value:bool) -> None:
+        self.left_mic_inverting_input = self.right_mic_inverting_input = value
+
     _left_mic_input2 = WOBit(_REG_ADCL_SIGNAL_PATH, 6)
     _left_mic_input3 = WOBit(_REG_ADCL_SIGNAL_PATH, 7)
 
@@ -748,7 +755,7 @@ class WM8960:
     def output(self) -> bool:
         return self.left_output and self.right_output
     @output.setter
-    def output(self, value:bool):
+    def output(self, value:bool) -> None:
         self.left_output = self.right_output = value
 
     ## DAC Output
