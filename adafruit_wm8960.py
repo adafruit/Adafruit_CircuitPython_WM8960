@@ -1610,11 +1610,12 @@ class WM8960:
         self.i2c_device = I2CDevice(i2c_bus, address)
         self._sample_rate = None
 
-        self._registers = _REG_DEFAULTS[:]
+        self._registers = [0] * len(_REG_DEFAULTS)
         for i, reg in enumerate(self._registers):
-            reg = bytearray(reg.to_bytes(2, "big"))
-            reg[0] |= i << 1
-            self._registers[i] = reg
+            self._registers[i] = bytearray(reg.to_bytes(2, "big"))
+
+        # Must be called before `reset` to ensure that _REG_RESET is addressed properly
+        self._reset_registers()
 
         self.reset()
 
@@ -1625,7 +1626,11 @@ class WM8960:
     # Resets all registers to their default state
     _reset = WOBit(_REG_RESET, 7)
 
-    def reset(self) -> None:
-        self._reset = True
+    def _reset_registers(self) -> None:
         for i, reg in enumerate(self._registers):
             reg[:] = _REG_DEFAULTS[i].to_bytes(2, "big")
+            reg[0] |= i << 1
+
+    def reset(self) -> None:
+        self._reset = True
+        self._reset_registers()
