@@ -24,18 +24,19 @@ Implementation Notes
 
 # * Adafruit's Bus Device library: https://github.com/adafruit/Adafruit_CircuitPython_BusDevice
 """
+# pylint: disable=too-many-lines
 
 __version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_WM8960.git"
 
+import math
 from busio import I2C
 from adafruit_bus_device.i2c_device import I2CDevice
 from adafruit_simplemath import constrain, map_range
-import math
 from micropython import const
 
 try:
-    from typing import Optional, Type, Protocol
+    from typing import Optional, Type
     from circuitpython_typing.device_drivers import I2CDeviceDriver
 except ImportError:
     pass
@@ -227,6 +228,9 @@ _REG_DEFAULTS = [
 ]
 
 
+# pylint: disable=protected-access
+
+
 class WOBit:
 
     def __init__(
@@ -300,7 +304,10 @@ class WOBits:
             i2c.write(obj._registers[self.register_address])
 
 
-class WM8960:
+# pylint: enable=protected-access
+
+
+class WM8960:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
 
     # Power
 
@@ -352,15 +359,14 @@ class WM8960:
     def left_mic_input(self) -> int:
         if self._left_mic_input2:
             return MIC_INPUT2
-        elif self._left_mic_input3:
+        if self._left_mic_input3:
             return MIC_INPUT3
-        else:
-            return MIC_VMID
+        return MIC_VMID
 
     @left_mic_input.setter
-    def left_mic_input(self, input: int) -> None:
-        self._left_mic_input2 = input == MIC_INPUT2
-        self._left_mic_input3 = input == MIC_INPUT3
+    def left_mic_input(self, value: int) -> None:
+        self._left_mic_input2 = value == MIC_INPUT2
+        self._left_mic_input3 = value == MIC_INPUT3
 
     _right_mic_input2 = WOBit(_REG_ADCR_SIGNAL_PATH, 6)
     _right_mic_input3 = WOBit(_REG_ADCR_SIGNAL_PATH, 7)
@@ -369,15 +375,14 @@ class WM8960:
     def right_mic_input(self) -> int:
         if self._right_mic_input2:
             return MIC_INPUT2
-        elif self._right_mic_input3:
+        if self._right_mic_input3:
             return MIC_INPUT3
-        else:
-            return MIC_VMID
+        return MIC_VMID
 
     @right_mic_input.setter
-    def right_mic_input(self, input: int) -> None:
-        self._right_mic_input2 = input == MIC_INPUT2
-        self._right_mic_input3 = input == MIC_INPUT3
+    def right_mic_input(self, value: int) -> None:
+        self._right_mic_input2 = value == MIC_INPUT2
+        self._right_mic_input3 = value == MIC_INPUT3
 
     @property
     def mic_input(self) -> int:
@@ -385,8 +390,8 @@ class WM8960:
         return self.left_mic_input
 
     @mic_input.setter
-    def mic_input(self, input: int) -> None:
-        self.left_mic_input = self.right_mic_input = input
+    def mic_input(self, value: int) -> None:
+        self.left_mic_input = self.right_mic_input = value
 
     ## Boost
 
@@ -401,7 +406,8 @@ class WM8960:
     def mic_boost(self, value: bool) -> None:
         self.left_mic_boost = self.right_mic_boost = value
 
-    def _get_mic_boost_gain(self, value: float) -> int:
+    @staticmethod
+    def _get_mic_boost_gain(value: float) -> int:
         for i in reversed(range(len(_MIC_BOOST_GAIN))):
             if value >= _MIC_BOOST_GAIN[i]:
                 return i
@@ -415,7 +421,7 @@ class WM8960:
 
     @left_mic_boost_gain.setter
     def left_mic_boost_gain(self, value: float) -> None:
-        self._left_mic_boost_gain = self._get_mic_boost_gain(value)
+        self._left_mic_boost_gain = WM8960._get_mic_boost_gain(value)
 
     _right_mic_boost_gain = WOBits(2, _REG_ADCR_SIGNAL_PATH, 4)
 
@@ -425,7 +431,7 @@ class WM8960:
 
     @right_mic_boost_gain.setter
     def right_mic_boost_gain(self, value: float) -> None:
-        self._right_mic_boost_gain = self._get_mic_boost_gain(value)
+        self._right_mic_boost_gain = WM8960._get_mic_boost_gain(value)
 
     @property
     def mic_boost_gain(self) -> float:
@@ -434,7 +440,7 @@ class WM8960:
     @mic_boost_gain.setter
     def mic_boost_gain(self, value: float) -> None:
         self._left_mic_boost_gain = self._right_mic_boost_gain = (
-            self._get_mic_boost_gain(value)
+            WM8960._get_mic_boost_gain(value)
         )
 
     ## Volume
@@ -603,7 +609,7 @@ class WM8960:
         # fmt: off
         return (
             None
-            if value is 0
+            if value == 0
             else map_range(
                 value, 1, 7,
                 BOOST_GAIN_MIN, BOOST_GAIN_MAX
@@ -684,7 +690,7 @@ class WM8960:
         # fmt: off
         return (
             None
-            if value is 0
+            if value == 0
             else map_range(
                 value, 1, 7,
                 BOOST_GAIN_MIN, BOOST_GAIN_MAX
@@ -1403,7 +1409,8 @@ class WM8960:
     def speaker_zero_cross(self, value: bool) -> None:
         self.left_speaker_zero_cross = self.right_speaker_zero_cross = value
 
-    def _get_speaker_boost_gain(self, value: float) -> int:
+    @staticmethod
+    def _get_speaker_boost_gain(value: float) -> int:
         for i in reversed(range(len(_SPEAKER_BOOST_GAIN))):
             if value >= _SPEAKER_BOOST_GAIN[i]:
                 return i
@@ -1417,7 +1424,7 @@ class WM8960:
 
     @speaker_dc_gain.setter
     def speaker_dc_gain(self, value: float) -> None:
-        self._speaker_dc_gain = self._get_speaker_boost_gain(value)
+        self._speaker_dc_gain = WM8960._get_speaker_boost_gain(value)
 
     _speaker_ac_gain = WOBits(3, _REG_CLASS_D_CONTROL_3, 0)
 
@@ -1427,7 +1434,7 @@ class WM8960:
 
     @speaker_ac_gain.setter
     def speaker_ac_gain(self, value: float) -> None:
-        self._speaker_ac_gain = self._get_speaker_boost_gain(value)
+        self._speaker_ac_gain = WM8960._get_speaker_boost_gain(value)
 
     # Digital Audio Interface Control
 
@@ -1453,7 +1460,7 @@ class WM8960:
 
     clock_fractional_mode = WOBit(_REG_PLL_N, 5)
 
-    clock_from_pLL = WOBit(_REG_CLOCKING_1, 0)
+    clock_from_pll = WOBit(_REG_CLOCKING_1, 0)
 
     _system_clock_divider = WOBits(2, _REG_CLOCKING_1, 1)
 
@@ -1522,10 +1529,7 @@ class WM8960:
     @property
     def bit_depth(self) -> int:
         value = self._bit_depth
-        if value == 3:
-            return 32
-        else:
-            return 16 + 4 * value
+        return 32 if value == 3 else 16 + 4 * value
 
     @bit_depth.setter
     def bit_depth(self, value: int) -> None:
@@ -1580,7 +1584,7 @@ class WM8960:
         # MCLK = 24 MHz
         self.pll = True  # Needed for class-d amp clock
         self.clock_fractional_mode = True
-        self.clock_from_pLL = True
+        self.clock_from_pll = True
 
         self.pll_prescale_div2 = True
         self.system_clock_div2 = True
@@ -1602,7 +1606,7 @@ class WM8960:
             self.adc_clock_divider = self.dac_clock_divider = 44100 / value
 
         else:
-            raise Exception("Invalid sample rate")
+            raise ValueError("Invalid sample rate")
 
         self._sample_rate = value
 
