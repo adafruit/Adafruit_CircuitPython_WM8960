@@ -166,6 +166,66 @@ _BCLKDIV = [1.0, 1.5, 2.0, 3.0, 4.0, 5.5, 6.0, 8.0, 11.0, 12.0, 16.0, 22.0, 24.0
 _DCLKDIV = [1.5, 2.0, 3.0, 4.0, 6.0, 8.0, 12.0, 16.0]
 _ADCDACDIV = [1.0, 1.5, 2.0, 3.0, 4.0, 5.5, 6.0]
 
+# Default Register Map
+_REG_DEFAULTS = [
+    const(0x0097),  # R0 (0x00)
+    const(0x0097),  # R1 (0x01)
+    const(0x0000),  # R2 (0x02)
+    const(0x0000),  # R3 (0x03)
+    const(0x0000),  # R4 (0x04)
+    const(0x0008),  # F5 (0x05)
+    const(0x0000),  # R6 (0x06)
+    const(0x000A),  # R7 (0x07)
+    const(0x01C0),  # R8 (0x08)
+    const(0x0000),  # R9 (0x09)
+    const(0x00FF),  # R10 (0x0a)
+    const(0x00FF),  # R11 (0x0b)
+    const(0x0000),  # R12 (0x0C) RESERVED
+    const(0x0000),  # R13 (0x0D) RESERVED
+    const(0x0000),  # R14 (0x0E) RESERVED
+    const(0x0000),  # R15 (0x0F) RESERVED
+    const(0x0000),  # R16 (0x10)
+    const(0x007B),  # R17 (0x11)
+    const(0x0100),  # R18 (0x12)
+    const(0x0032),  # R19 (0x13)
+    const(0x0000),  # R20 (0x14)
+    const(0x00C3),  # R21 (0x15)
+    const(0x00C3),  # R22 (0x16)
+    const(0x01C0),  # R23 (0x17)
+    const(0x0000),  # R24 (0x18)
+    const(0x0000),  # R25 (0x19)
+    const(0x0000),  # R26 (0x1A)
+    const(0x0000),  # R27 (0x1B)
+    const(0x0000),  # R28 (0x1C)
+    const(0x0000),  # R29 (0x1D)
+    const(0x0000),  # R30 (0x1E) RESERVED
+    const(0x0000),  # R31 (0x1F) RESERVED
+    const(0x0100),  # R32 (0x20)
+    const(0x0100),  # R33 (0x21)
+    const(0x0050),  # R34 (0x22)
+    const(0x0000),  # R35 (0x23) RESERVED
+    const(0x0000),  # R36 (0x24) RESERVED
+    const(0x0050),  # R37 (0x25)
+    const(0x0000),  # R38 (0x26)
+    const(0x0000),  # R39 (0x27)
+    const(0x0000),  # R40 (0x28)
+    const(0x0000),  # R41 (0x29)
+    const(0x0040),  # R42 (0x2A)
+    const(0x0000),  # R43 (0x2B)
+    const(0x0000),  # R44 (0x2C)
+    const(0x0050),  # R45 (0x2D)
+    const(0x0050),  # R46 (0x2E)
+    const(0x0000),  # R47 (0x2F)
+    const(0x0002),  # R48 (0x30)
+    const(0x0037),  # R49 (0x31)
+    const(0x0000),  # R50 (0x32) RESERVED
+    const(0x0080),  # R51 (0x33)
+    const(0x0008),  # R52 (0x34)
+    const(0x0031),  # R53 (0x35)
+    const(0x0026),  # R54 (0x36)
+    const(0x00E9),  # R55 (0x37)
+]
+
 
 class WOBit:
 
@@ -184,11 +244,6 @@ class WOBit:
             obj._registers[self.register_address][self.byte] |= self.bit_mask
         else:
             obj._registers[self.register_address][self.byte] &= ~self.bit_mask
-
-    def reset(self, obj: Optional[I2CDeviceDriver]) -> None:
-        if not hasattr(self, "default"):
-            self.default = self.__get__(obj)
-        self._set(obj, self.default)
 
     def __get__(
         self,
@@ -226,12 +281,6 @@ class WOBits:
         for i in range(1, -1, -1):
             obj._registers[self.register_address][i] = reg & 0xFF
             reg >>= 8
-
-    # Must call first before using object
-    def reset(self, obj: Optional[I2CDeviceDriver]) -> None:
-        if not hasattr(self, "default"):
-            self.default = self.__get__(obj)
-        self._set(obj, self.default)
 
     def __get__(
         self,
@@ -1561,67 +1610,11 @@ class WM8960:
         self.i2c_device = I2CDevice(i2c_bus, address)
         self._sample_rate = None
 
-        self._registers = [
-            0x0097,  # R0 (0x00)
-            0x0097,  # R1 (0x01)
-            0x0000,  # R2 (0x02)
-            0x0000,  # R3 (0x03)
-            0x0000,  # R4 (0x04)
-            0x0008,  # F5 (0x05)
-            0x0000,  # R6 (0x06)
-            0x000A,  # R7 (0x07)
-            0x01C0,  # R8 (0x08)
-            0x0000,  # R9 (0x09)
-            0x00FF,  # R10 (0x0a)
-            0x00FF,  # R11 (0x0b)
-            0x0000,  # R12 (0x0C) RESERVED
-            0x0000,  # R13 (0x0D) RESERVED
-            0x0000,  # R14 (0x0E) RESERVED
-            0x0000,  # R15 (0x0F) RESERVED
-            0x0000,  # R16 (0x10)
-            0x007B,  # R17 (0x11)
-            0x0100,  # R18 (0x12)
-            0x0032,  # R19 (0x13)
-            0x0000,  # R20 (0x14)
-            0x00C3,  # R21 (0x15)
-            0x00C3,  # R22 (0x16)
-            0x01C0,  # R23 (0x17)
-            0x0000,  # R24 (0x18)
-            0x0000,  # R25 (0x19)
-            0x0000,  # R26 (0x1A)
-            0x0000,  # R27 (0x1B)
-            0x0000,  # R28 (0x1C)
-            0x0000,  # R29 (0x1D)
-            0x0000,  # R30 (0x1E) RESERVED
-            0x0000,  # R31 (0x1F) RESERVED
-            0x0100,  # R32 (0x20)
-            0x0100,  # R33 (0x21)
-            0x0050,  # R34 (0x22)
-            0x0000,  # R35 (0x23) RESERVED
-            0x0000,  # R36 (0x24) RESERVED
-            0x0050,  # R37 (0x25)
-            0x0000,  # R38 (0x26)
-            0x0000,  # R39 (0x27)
-            0x0000,  # R40 (0x28)
-            0x0000,  # R41 (0x29)
-            0x0040,  # R42 (0x2A)
-            0x0000,  # R43 (0x2B)
-            0x0000,  # R44 (0x2C)
-            0x0050,  # R45 (0x2D)
-            0x0050,  # R46 (0x2E)
-            0x0000,  # R47 (0x2F)
-            0x0002,  # R48 (0x30)
-            0x0037,  # R49 (0x31)
-            0x0000,  # R50 (0x32) RESERVED
-            0x0080,  # R51 (0x33)
-            0x0008,  # R52 (0x34)
-            0x0031,  # R53 (0x35)
-            0x0026,  # R54 (0x36)
-            0x00E9,  # R55 (0x37)
-        ]
-        for i in range(len(self._registers)):
-            self._registers[i] = bytearray(self._registers[i].to_bytes(2, "big"))
-            self._registers[i][0] |= i << 1
+        self._registers = _REG_DEFAULTS[:]
+        for i, reg in enumerate(self._registers):
+            reg = bytearray(reg.to_bytes(2, "big"))
+            reg[0] |= i << 1
+            self._registers[i] = reg
 
         self.reset()
 
@@ -1634,8 +1627,5 @@ class WM8960:
 
     def reset(self) -> None:
         self._reset = True
-        for name in dir(self):
-            if not name.startswith("_") and isinstance(
-                getattr(self, name), (WOBit, WOBits)
-            ):
-                getattr(self, name).reset(self)
+        for i, reg in enumerate(self._registers):
+            reg[:] = _REG_DEFAULTS[i].to_bytes(2, "big")
