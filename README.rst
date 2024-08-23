@@ -87,20 +87,16 @@ Usage Example
 
 .. code-block:: python
 
-    # Monitor Stereo MIC Input:
-    # MIC (INPUT1) => PGA => Boost Mixer => Output Mixer => Headphones
+    # Monitor Stereo Input: INPUT3 => Output Mixer => Headphones
     import board, adafruit_wm8960
     codec = adafruit_wm8960.WM8960(board.I2C())
-    codec.enableMIC()
-    codec.enableMN1()
-    codec.enableINMUTE()
-    codec.setMICBOOST(adafruit_wm8960.MIC_BOOST_GAIN_0DB)
-    codec.connectMIC2B()
-    codec.enableAIN()
-    codec.enableB2O()
-    codec.setB2OVOL(adafruit_wm8960.OUTPUT_MIXER_GAIN_0DB)
-    codec.enableOMIX()
-    codec.configureHeadphones()
+    codec.input = True
+    codec.input3_output = True
+    codec.input3_output_volume = 0.0
+    codec.output = True
+    codec.headphone = True
+    codec.mono_output = True
+    codec.headphone_volume = 0.0
 
 Documentation
 =============
