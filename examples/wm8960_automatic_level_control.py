@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-'''
+"""
 Demonstrates how to use the automatic level control feature of the WM8960 Codec.
 
 Attach a potentiomenter to GND/A0/3V3 to actively adjust the ALC target setting.
@@ -52,7 +52,7 @@ https://github.com/sparkfun/SparkFun_WM8960_Arduino_Library
 
 For information on the data sent to and received from the CODEC, refer to the WM8960 datasheet at:
 https://github.com/sparkfun/SparkFun_Audio_Codec_Breakout_WM8960/blob/main/Documents/WM8960_datasheet_v4.2.pdf
-'''
+"""
 
 import board, time
 from analogio import AnalogIn
@@ -75,7 +75,7 @@ codec.mic_mute = False
 # Set input boosts to get inputs 1 to the boost mixers
 codec.mic_boost_gain = adafruit_wm8960.MIC_BOOST_GAIN_0DB
 codec.mic_boost = True
-codec.input = True # Enable boost mixers
+codec.input = True  # Enable boost mixers
 
 # Disconnect LB2LO (booster to output mixer (analog bypass)
 # For this example, we are going to pass audio throught the ADC and DAC
@@ -94,7 +94,7 @@ codec.output = True
 # Setup clock and mode
 codec.sample_rate = 44100
 codec.master_mode = True
-codec.gpio_output = True # Note, should not be changed while ADC is enabled.
+codec.gpio_output = True  # Note, should not be changed while ADC is enabled.
 
 # Enable ADCs and DACs
 codec.adc = codec.dac = True
@@ -108,7 +108,9 @@ codec.dac_mute = False
 # Enable headphone amp output
 codec.headphone = True
 codec.headphone_volume = 0.0
-codec.mono_output = True # Enables capless mode using the VMID as buffer for headphone ground on OUT3
+
+# Enables capless mode using the VMID as buffer for headphone ground on OUT3
+codec.mono_output = True
 
 # Automatic Level control configuration
 
@@ -125,5 +127,11 @@ codec.alc_max_gain = adafruit_wm8960.ALC_MAX_GAIN_MAX
 codec.alc_min_gain = adafruit_wm8960.ALC_MIN_GAIN_MIN
 
 while True:
-    codec.alc_target = map_range(analog_in.value, 0, 65536, adafruit_wm8960.ALC_TARGET_MIN, adafruit_wm8960.ALC_TARGET_MAX)
+    codec.alc_target = map_range(
+        analog_in.value,
+        0,
+        65536,
+        adafruit_wm8960.ALC_TARGET_MIN,
+        adafruit_wm8960.ALC_TARGET_MAX,
+    )
     time.sleep(1.0)

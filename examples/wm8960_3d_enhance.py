@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-'''
+"""
 Demonstrates analog audio input (on INPUT1s), ADC/DAC Loopback, sets volume control, and Headphone output on the WM8960 Codec.
 
 Audio should be connected to both the left and right "INPUT1" inputs, they are labeled "RIN1" and "LIN1" on the board.
@@ -43,7 +43,7 @@ https://github.com/sparkfun/SparkFun_WM8960_Arduino_Library
 
 For information on the data sent to and received from the CODEC, refer to the WM8960 datasheet at:
 https://github.com/sparkfun/SparkFun_Audio_Codec_Breakout_WM8960/blob/main/Documents/WM8960_datasheet_v4.2.pdf
-'''
+"""
 
 import board, time
 import adafruit_wm8960
@@ -80,7 +80,7 @@ codec.output = True
 # Setup sample rate
 codec.sample_rate = 44100
 codec.master_mode = True
-codec.gpio_output = True # Note, should not be changed while ADC is enabled.
+codec.gpio_output = True  # Note, should not be changed while ADC is enabled.
 
 # Enable ADCs and DACs
 codec.adc = codec.dac = True

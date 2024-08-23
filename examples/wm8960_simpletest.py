@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Unlicense
 
-'''
+"""
 Demonstrates I2C Output on WM8960 Codec by generating a simple tone using synthio. Sounds like an alarm clock.
 
 It will output the sound on the headphone outputs.
@@ -35,7 +35,7 @@ Valid inputs are -74.00 (MUTE) up to +6.00, (1.00dB steps).
 
 For information on the data sent to and received from the CODEC, refer to the WM8960 datasheet at:
 https://github.com/sparkfun/SparkFun_Audio_Codec_Breakout_WM8960/blob/main/Documents/WM8960_datasheet_v4.2.pdf
-'''
+"""
 
 import audiobusio
 import board
@@ -77,10 +77,10 @@ led.switch_to_output()
 
 while True:
     print("note on")
-    synth.press(65) # midi note 65 = F4
+    synth.press(65)  # midi note 65 = F4
     led.value = True
     time.sleep(0.5)
-    synth.release(65) # release the note we pressed
+    synth.release(65)  # release the note we pressed
     led.value = False
     print("note off")
     time.sleep(0.5)
