@@ -62,7 +62,6 @@ from adafruit_wm8960 import Input, WM8960
 analog_in = AnalogIn(board.A0)
 
 codec = WM8960(board.I2C())
-codec.loopback = True
 codec.input = Input.MIC1
 codec.gain = 0.5
 codec.volume = 1.0
@@ -70,23 +69,21 @@ codec.headphone = 0.5
 
 codec.alc = True
 codec.alc_gain = (
-    0.75, # target
-    1.0, # max gain
-    0.0, # min gain
-    0.0, # noise gate
+    0.75,  # target
+    1.0,  # max gain
+    0.0,  # min gain
+    0.0,  # noise gate
 )
 codec.alc_time = (
-    0.024, # attack
-    0.192, # decay
-    0.0, # hold
+    0.024,  # attack
+    0.192,  # decay
+    0.0,  # hold
 )
 
-gain = codec.alc_gain
+codec.loopback = True
+
+gain = list(codec.alc_gain)
 while True:
-    gain[0] = map_range(
-        analog_in.value,
-        0, 65536,
-        0.0, 1.0
-    )
+    gain[0] = map_range(analog_in.value, 0, 65536, 0.0, 1.0)
     codec.alc_gain = gain
     time.sleep(1.0)
