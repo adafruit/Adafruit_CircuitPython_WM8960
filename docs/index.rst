@@ -22,6 +22,12 @@ Table of Contents
     api
 
 .. toctree::
+    :caption: Advanced API Reference
+    :maxdepth: 3
+
+    api-advanced
+
+.. toctree::
     :caption: Tutorials
 
 .. toctree::
