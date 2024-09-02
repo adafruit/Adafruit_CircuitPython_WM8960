@@ -57,81 +57,36 @@ https://github.com/sparkfun/SparkFun_Audio_Codec_Breakout_WM8960/blob/main/Docum
 import board, time
 from analogio import AnalogIn
 from adafruit_simplemath import map_range
-import adafruit_wm8960
+from adafruit_wm8960 import Input, WM8960
 
 analog_in = AnalogIn(board.A0)
 
-codec = adafruit_wm8960.WM8960(board.I2C())
-
-# Setup signal flow to the ADC
-codec.mic = True
-
-# Connect from INPUT1 to "n" (aka inverting) inputs of PGAs
-codec.mic_inverting_input = True
-
-# Disable mutes on PGA inputs (aka INTPUT1)
-codec.mic_mute = False
-
-# Set input boosts to get inputs 1 to the boost mixers
-codec.mic_boost_gain = adafruit_wm8960.MIC_BOOST_GAIN_0DB
-codec.mic_boost = True
-codec.input = True  # Enable boost mixers
-
-# Disconnect LB2LO (booster to output mixer (analog bypass)
-# For this example, we are going to pass audio throught the ADC and DAC
-codec.mic_output = False
-
-# Connect from DAC outputs to output mixer
-codec.dac_output = True
-
-# Set gainstage between booster mixer and output mixer
-# For this loopback example, we are going to keep these as low as they go
-codec.mic_output_volume = adafruit_wm8960.OUTPUT_VOLUME_MIN
-
-# Enable output mixers
-codec.output = True
-
-# Setup clock and mode
-codec.sample_rate = 44100
-codec.master_mode = True
-codec.gpio_output = True  # Note, should not be changed while ADC is enabled.
-
-# Enable ADCs and DACs
-codec.adc = codec.dac = True
-
-# Loopback sends ADC data directly into DAC
+codec = WM8960(board.I2C())
 codec.loopback = True
-
-# Default is "soft mute" on, so we must disable mute to make channels active
-codec.dac_mute = False
-
-# Enable headphone amp output
-codec.headphone = True
-codec.headphone_volume = 0.0
-
-# Enables capless mode using the VMID as buffer for headphone ground on OUT3
-codec.mono_output = True
-
-# Automatic Level control configuration
-
-# Only allows mic gain stages at a "zero crossover" point in audio stream.
-# Minimizes "zipper" noise when chaning gains.
-codec.mic_zero_cross = True
+codec.input = Input.MIC1
+codec.gain = 0.5
+codec.volume = 1.0
+codec.headphone = 0.5
 
 codec.alc = True
-codec.alc_target = -6.0
-codec.alc_attack_time = 0.024
-codec.alc_hold_time = 0.0
-codec.alc_decay_time = 0.192
-codec.alc_max_gain = adafruit_wm8960.ALC_MAX_GAIN_MAX
-codec.alc_min_gain = adafruit_wm8960.ALC_MIN_GAIN_MIN
+codec.alc_gain = (
+    0.75, # target
+    1.0, # max gain
+    0.0, # min gain
+    0.0, # noise gate
+)
+codec.alc_time = (
+    0.024, # attack
+    0.192, # decay
+    0.0, # hold
+)
 
+gain = codec.alc_gain
 while True:
-    codec.alc_target = map_range(
+    gain[0] = map_range(
         analog_in.value,
-        0,
-        65536,
-        adafruit_wm8960.ALC_TARGET_MIN,
-        adafruit_wm8960.ALC_TARGET_MAX,
+        0, 65536,
+        0.0, 1.0
     )
+    codec.alc_gain = gain
     time.sleep(1.0)

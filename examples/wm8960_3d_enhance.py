@@ -46,60 +46,17 @@ https://github.com/sparkfun/SparkFun_Audio_Codec_Breakout_WM8960/blob/main/Docum
 """
 
 import board, time
-import adafruit_wm8960
+from adafruit_wm8960 import Input, WM8960
 
-codec = adafruit_wm8960.WM8960(board.I2C())
-
-# Setup signal flow to the ADC
-codec.mic = True
-
-# Connect from INPUT1 to "n" (aka inverting) inputs of PGAs.
-codec.mic_inverting_input = True
-
-# Disable mutes on PGA inputs (aka INTPUT1)
-codec.mic_mute = False
-
-# Set input boosts to get inputs 1 to the boost mixers
-codec.mic_boost_gain = 0.0
-codec.mic_boost = True
-
-# Disconnect LB2LO (booster to output mixer (analog bypass)
-# For this example, we are going to pass audio throught the ADC and DAC
-codec.mic_output = False
-
-# Connect from DAC outputs to output mixer
-codec.dac_output = True
-
-# Set gainstage between booster mixer and output mixer
-# For this loopback example, we are going to keep these as low as they go
-codec.mic_output_volume = adafruit_wm8960.OUTPUT_VOLUME_MIN
-
-# Enable output mixers
-codec.output = True
-
-# Setup sample rate
-codec.sample_rate = 44100
-codec.master_mode = True
-codec.gpio_output = True  # Note, should not be changed while ADC is enabled.
-
-# Enable ADCs and DACs
-codec.adc = codec.dac = True
-
-# Loopback sends ADC data directly into DAC
+codec = WM8960(board.I2C())
 codec.loopback = True
+codec.input = Input.MIC1
+codec.gain = 0.5
+codec.volume = 1.0
 
-# Default is "soft mute" on, so we must disable mute to make channels active
-codec.dac_mute = False
-
-# Enable Headphone Amp with OUT3 as capless buffer for headphone ground
-codec.headphone = True
-codec.mono_output = True
-codec.headphone_volume = 0.0
-
-# Set 3D enhance depth to max (0.0 - 1.0)
-codec.enhance_depth = 1.0
+codec.headphone = 0.5
 
 # Toggle 3D enhance on and off
 while True:
-    codec.enhance = not codec.enhance
+    codec.enhance = 0.0 if codec.enhance else 1.0
     time.sleep(2.0)

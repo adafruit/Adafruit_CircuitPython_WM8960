@@ -40,30 +40,14 @@ https://github.com/sparkfun/SparkFun_Audio_Codec_Breakout_WM8960/blob/main/Docum
 import audiobusio
 import board
 import synthio
-import adafruit_wm8960
+from adafruit_wm8960 import WM8960
 import time
 import digitalio
 
-codec = adafruit_wm8960.WM8960(board.I2C())
-
-# Setup Digital Interface
-codec.sample_rate = 44100
-codec.bit_depth = 16
-
-# Enable DAC
-codec.dac = True
-codec.dac_output = True
-codec.output = True
-codec.dac_mute = False
-
-# Enable Headphone Amp with OUT3 as capless buffer for headphone ground
-codec.headphone = True
-codec.mono_output = True
-codec.headphone_volume = 0.0
-
-# Enable Speaker Amp
-codec.speaker = True
-codec.speaker_volume = 0.0
+codec = WM8960(board.I2C(), 44100, 16)
+codec.volume = 1.0
+codec.headphone = 0.5
+codec.speaker = 0.5
 
 # Configure I2S Output
 audio = audiobusio.I2SOut(board.AUDIO_BCLK, board.AUDIO_SYNC, board.AUDIO_TXD)

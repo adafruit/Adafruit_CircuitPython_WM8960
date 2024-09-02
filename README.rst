@@ -88,15 +88,13 @@ Usage Example
 .. code-block:: python
 
     # Monitor Stereo Input: INPUT3 => Output Mixer => Headphones
-    import board, adafruit_wm8960
-    codec = adafruit_wm8960.WM8960(board.I2C())
-    codec.input = True
-    codec.input3_output = True
-    codec.input3_output_volume = 0.0
-    codec.output = True
-    codec.headphone = True
-    codec.mono_output = True
-    codec.headphone_volume = 0.0
+    import board
+    from adafruit_wm8960 import Input, WM8960
+    codec = WM8960(board.I2C())
+    codec.input = Input.LINE3
+    codec.gain = 0.5
+    codec.monitor = 1.0
+    codec.headphone = 0.5
 
 Documentation
 =============
