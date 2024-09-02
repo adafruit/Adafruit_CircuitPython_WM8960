@@ -1208,12 +1208,13 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
     def alc_hold_time(self, value: float) -> None:
         self._alc_hold = (
             round(
-                math.log2(
+                math.log(
                     (
                         constrain(value, ALC_HOLD_TIME_MIN, ALC_HOLD_TIME_MAX)
                         - ALC_HOLD_TIME_MIN
                     )
-                    / ALC_HOLD_TIME_MIN
+                    / ALC_HOLD_TIME_MIN,
+                    2.0,
                 )
                 + 1.0
             )
@@ -1238,12 +1239,13 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
     def alc_decay_time(self, value: float) -> None:
         self._alc_decay = min(
             round(
-                math.log2(
+                math.log(
                     (
                         constrain(value, ALC_DECAY_TIME_MIN, ALC_DECAY_TIME_MAX)
                         - ALC_DECAY_TIME_MIN
                     )
-                    / ALC_DECAY_TIME_MIN
+                    / ALC_DECAY_TIME_MIN,
+                    2.0,
                 )
             ),
             _ALC_DECAY_MAX,
@@ -1266,12 +1268,13 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
     def alc_attack_time(self, value: float) -> None:
         self._alc_attack = min(
             round(
-                math.log2(
+                math.log(
                     (
                         constrain(value, ALC_ATTACK_TIME_MIN, ALC_ATTACK_TIME_MAX)
                         - ALC_ATTACK_TIME_MIN
                     )
-                    / ALC_ATTACK_TIME_MIN
+                    / ALC_ATTACK_TIME_MIN,
+                    2.0,
                 )
             ),
             _ALC_ATTACK_MAX,
