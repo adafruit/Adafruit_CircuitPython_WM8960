@@ -4,14 +4,18 @@
 # SPDX-License-Identifier: MIT
 
 """
-Demonstrates analog audio input (on INPUT2s), sets volume control, and headphone output on the WM8960 Codec.
+Demonstrates analog audio input (on INPUT2s), sets volume control, and headphone output on the
+WM8960 Codec.
 
-Audio should be connected to both the left and right "INPUT2" inputs, they are labeled "RIN2" and "LIN2" on the board.
+Audio should be connected to both the left and right "INPUT2" inputs, they are labeled "RIN2" and
+"LIN2" on the board.
 
-This example will pass your audio source through the mixers and gain stages of the codec using all of the analog bypass paths.
+This example will pass your audio source through the mixers and gain stages of the codec using all
+of the analog bypass paths.
 
 It will output the sound on the headphone outputs.
-It is setup to do a capless headphone setup, so connect your headphones ground to "OUT3" and this provides a buffered VMID.
+It is setup to do a capless headphone setup, so connect your headphones ground to "OUT3" and this
+provides a buffered VMID.
 
 You can now control the volume of the codecs built in headphone buffers using this function:
 codec.setHeadphoneVolumeDB(6.00); Valid inputs are -74.00 (MUTE) up to +6.00, (1.00dB steps).
@@ -51,7 +55,8 @@ from adafruit_wm8960 import Input, WM8960
 
 codec = WM8960(board.I2C())
 
-# Select the desired input. Available options are MIC1 (single-ended), MIC2 (differential), MIC3 (differential), LINE2, or LINE3.
+# Select the desired input. Available options are MIC1 (single-ended), MIC2 (differential),
+# MIC3 (differential), LINE2, or LINE3.
 codec.input = Input.MIC1
 
 # Configure the microphone boost gain

@@ -4,11 +4,14 @@
 # SPDX-License-Identifier: MIT
 
 """
-Demonstrates analog audio input (on INPUT1s), ADC/DAC Loopback, sets volume control, and Headphone output on the WM8960 Codec.
+Demonstrates analog audio input (on INPUT1s), ADC/DAC Loopback, sets volume control, and Headphone
+output on the WM8960 Codec.
 
-Audio should be connected to both the left and right "INPUT1" inputs, they are labeled "RIN1" and "LIN1" on the board.
+Audio should be connected to both the left and right "INPUT1" inputs, they are labeled "RIN1" and
+"LIN1" on the board.
 
-This example will pass your audio source through the mixers and gain stages of the codec into the ADC. Turn on Loopback (so ADC is feed directly to DAC).
+This example will pass your audio source through the mixers and gain stages of the codec into the
+ADC. Turn on Loopback (so ADC is feed directly to DAC).
 Then send the output of the DAC to the headphone outs.
 
 You can now control the volume of the codecs built in headphone amp using this function:
@@ -45,7 +48,8 @@ For information on the data sent to and received from the CODEC, refer to the WM
 https://github.com/sparkfun/SparkFun_Audio_Codec_Breakout_WM8960/blob/main/Documents/WM8960_datasheet_v4.2.pdf
 """
 
-import board, time
+import time
+import board
 from adafruit_wm8960 import Input, WM8960
 
 codec = WM8960(board.I2C())
