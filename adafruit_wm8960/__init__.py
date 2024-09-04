@@ -61,7 +61,7 @@ class Input:
 
 
 class WM8960:
-    """Driver for controlling the WM8960 audio codec over an I2C connection.Used for receiving line
+    """Driver for controlling the WM8960 audio codec over an I2C connection. Used for receiving line
     and microphone input through the ADC over I2S, monitoring analog input to the output mixer, and
     sending digital audio to the headphone and speaker amplifiers via I2S.
 
