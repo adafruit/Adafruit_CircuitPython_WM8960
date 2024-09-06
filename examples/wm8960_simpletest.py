@@ -44,10 +44,10 @@ https://github.com/sparkfun/SparkFun_Audio_Codec_Breakout_WM8960/blob/main/Docum
 
 import time
 import board
+import digitalio
 import audiobusio
 import synthio
 from adafruit_wm8960 import WM8960
-import digitalio
 
 codec = WM8960(board.I2C(), 44100, 16)
 codec.volume = 1.0
