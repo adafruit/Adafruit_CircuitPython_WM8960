@@ -396,7 +396,6 @@ _REG_DEFAULTS = [
 
 
 class WOBit:
-
     def __init__(
         self,
         register_address: int,
@@ -427,7 +426,6 @@ class WOBit:
 
 
 class WOBits:
-
     def __init__(  # pylint: disable=too-many-arguments
         self,
         num_bits: int,
@@ -707,9 +705,9 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
 
     @mic_boost_gain.setter
     def mic_boost_gain(self, value: float) -> None:
-        self._left_mic_boost_gain = self._right_mic_boost_gain = (
-            WM8960_Advanced._get_mic_boost_gain(value)
-        )
+        self._left_mic_boost_gain = (
+            self._right_mic_boost_gain
+        ) = WM8960_Advanced._get_mic_boost_gain(value)
 
     ## Volume
 
@@ -1293,7 +1291,7 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
     """Whether or not the noise gate is enabled. The ALC, :attr:`alc`, must be set to `True` for
     this functionality to work. This feature will help prevent "noise pumping" during periods of
     quiet input signal. Only applicable to signal into the microphone amplifier.
-    
+
     :default: `False`
     """
 
