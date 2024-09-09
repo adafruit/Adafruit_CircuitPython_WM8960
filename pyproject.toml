@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2022 Alec Delaney, written for Adafruit Industries
 # SPDX-FileCopyrightText: Copyright (c) 2023 Scott Shawcroft for Adafruit Industries
+# SPDX-FileCopyrightText: Copyright (c) 2024 Cooper Dalrymple
 #
 # SPDX-License-Identifier: MIT
 
@@ -12,11 +13,12 @@ requires = [
 
 [project]
 name = "adafruit-circuitpython-wm8960"
-description = "Barebones CircuitPython driver for WM8960 Stereo CODEC"
+description = "CircuitPython driver for WM8960 Stereo CODEC"
 version = "0.0.0+auto.0"
 readme = "README.rst"
 authors = [
-    {name = "Adafruit Industries", email = "circuitpython@adafruit.com"}
+    {name = "Adafruit Industries", email = "circuitpython@adafruit.com"},
+    {name = "Cooper Dalrymple", email = "me@dcdalrymple.com"}
 ]
 urls = {Homepage = "https://github.com/adafruit/Adafruit_CircuitPython_WM8960"}
 keywords = [
@@ -24,7 +26,9 @@ keywords = [
     "blinka",
     "circuitpython",
     "micropython",
-    "wm8960",
+    "codec",
+    "dac",
+    "adc",
     "wm8960",
 ]
 license = {text = "MIT"}
@@ -39,9 +43,7 @@ classifiers = [
 dynamic = ["dependencies", "optional-dependencies"]
 
 [tool.setuptools]
-# TODO: IF LIBRARY FILES ARE A PACKAGE FOLDER,
-#       CHANGE `py_modules = ['...']` TO `packages = ['...']`
-py-modules = ["adafruit_wm8960"]
+packages = ["adafruit_wm8960"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
