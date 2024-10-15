@@ -98,7 +98,7 @@ Usage Example
 
 Documentation
 =============
-API documentation for this library can be found on `Read the Docs <https://docs.circuitpython.org/projects/adafruit_wm8960/en/latest/>`_.
+API documentation for this library can be found on `Read the Docs <https://docs.circuitpython.org/projects/wm8960/en/latest/>`_.
 
 Contributing
 ============
