@@ -246,7 +246,7 @@ class WM8960:
             self._codec.dac_mute = True
         elif self._codec.dac_mute:
             self._codec.dac_mute = False
-        self._codec.dac_output = map_range(
+        self._codec.dac_volume = map_range(
             value, 0.0, 1.0, DAC_VOLUME_MIN, DAC_VOLUME_MAX
         )
 
