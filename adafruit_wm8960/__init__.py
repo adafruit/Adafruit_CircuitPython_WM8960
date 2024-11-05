@@ -140,7 +140,7 @@ class WM8960:
         self._codec.mic = mic
         self._codec.mic_inverting_input = mic
         self._codec.mic_input = (value & 0b110) >> 1 if mic else Mic_Input.VMID
-        self._codec.mic_mute = mic
+        self._codec.mic_mute = not mic
         self._codec.mic_boost = mic
 
         # Reset gain values
