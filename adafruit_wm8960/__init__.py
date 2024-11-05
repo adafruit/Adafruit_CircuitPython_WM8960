@@ -169,13 +169,13 @@ class WM8960:
         self._codec.input2_boost = (
             map_range(value, 0.0, 1.0, BOOST_GAIN_MIN, BOOST_GAIN_MAX)
             if not mic and self._input & 0b010
-            else BOOST_GAIN_MIN
+            else BOOST_GAIN_MIN - 1.0
         )
 
         self._codec.input3_boost = (
             map_range(value, 0.0, 1.0, BOOST_GAIN_MIN, BOOST_GAIN_MAX)
             if not mic and self._input & 0b100
-            else BOOST_GAIN_MIN
+            else BOOST_GAIN_MIN - 1.0
         )
 
         self._gain = constrain(value, 0.0, 1.0)
