@@ -143,10 +143,10 @@ class WM8960:
         self._codec.mic_mute = not mic
         self._codec.mic_boost = mic
 
+        self._input = value
+
         # Reset gain values
         self.gain = self._gain
-
-        self._input = value
 
     @property
     def gain(self) -> float:
