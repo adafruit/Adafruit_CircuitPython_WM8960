@@ -140,13 +140,13 @@ class WM8960:
         self._codec.mic = mic
         self._codec.mic_inverting_input = mic
         self._codec.mic_input = (value & 0b110) >> 1 if mic else Mic_Input.VMID
-        self._codec.mic_mute = mic
+        self._codec.mic_mute = not mic
         self._codec.mic_boost = mic
+
+        self._input = value
 
         # Reset gain values
         self.gain = self._gain
-
-        self._input = value
 
     @property
     def gain(self) -> float:
@@ -169,13 +169,13 @@ class WM8960:
         self._codec.input2_boost = (
             map_range(value, 0.0, 1.0, BOOST_GAIN_MIN, BOOST_GAIN_MAX)
             if not mic and self._input & 0b010
-            else BOOST_GAIN_MIN
+            else BOOST_GAIN_MIN - 1.0
         )
 
         self._codec.input3_boost = (
             map_range(value, 0.0, 1.0, BOOST_GAIN_MIN, BOOST_GAIN_MAX)
             if not mic and self._input & 0b100
-            else BOOST_GAIN_MIN
+            else BOOST_GAIN_MIN - 1.0
         )
 
         self._gain = constrain(value, 0.0, 1.0)
