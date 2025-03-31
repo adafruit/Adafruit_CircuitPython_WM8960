@@ -1728,13 +1728,13 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
 
     ## Headphones
 
-    left_headphone: bool = WOBit(_REG_PWR_MGMT_2, 5)
+    left_headphone: bool = WOBit(_REG_PWR_MGMT_2, 6)
     """Whether or not the left channel of the headphone amplifier is powered on.
 
     :default: `False`
     """
 
-    right_headphone: bool = WOBit(_REG_PWR_MGMT_2, 6)
+    right_headphone: bool = WOBit(_REG_PWR_MGMT_2, 5)
     """Whether or not the right channel of the headphone amplifier is powered on.
 
     :default: `False`
@@ -2063,7 +2063,7 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
     :default: `False`
     """
 
-    pll_prescale_div2: bool = WOBit(_REG_PWR_MGMT_2, 4)
+    pll_prescale_div2: bool = WOBit(_REG_PLL_N, 4)
     """Divide MCLK by 2 before input to PLL.
 
     :default: `False`
