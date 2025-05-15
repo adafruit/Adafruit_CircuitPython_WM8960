@@ -49,8 +49,10 @@ https://github.com/sparkfun/SparkFun_Audio_Codec_Breakout_WM8960/blob/main/Docum
 """
 
 import time
+
 import board
-from adafruit_wm8960 import Input, WM8960
+
+from adafruit_wm8960 import WM8960, Input
 
 codec = WM8960(board.I2C())
 codec.loopback = True

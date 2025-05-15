@@ -24,13 +24,10 @@ Implementation Notes
 __version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_WM8960.git"
 
-from busio import I2C
 from adafruit_simplemath import constrain, map_range
+from busio import I2C
 
 from .advanced import *
-
-
-# pylint: disable=too-few-public-methods
 
 
 class Input:
@@ -55,9 +52,6 @@ class Input:
 
     LINE3 = 0b100
     """Connect input 3 as a line input."""
-
-
-# pylint: enable=too-few-public-methods
 
 
 class WM8960:
@@ -161,9 +155,7 @@ class WM8960:
         mic = bool(self._input & 0b001)
 
         self._codec.mic_volume = (
-            map_range(value, 0.0, 1.0, MIC_GAIN_MIN, MIC_GAIN_MAX)
-            if mic
-            else MIC_GAIN_MIN
+            map_range(value, 0.0, 1.0, MIC_GAIN_MIN, MIC_GAIN_MAX) if mic else MIC_GAIN_MIN
         )
 
         self._codec.input2_boost = (
@@ -215,9 +207,7 @@ class WM8960:
 
         :default: `False`
         """
-        return (
-            self._codec.master_mode and self._codec.gpio_output and self._codec.loopback
-        )
+        return self._codec.master_mode and self._codec.gpio_output and self._codec.loopback
 
     @loopback.setter
     def loopback(self, value: bool) -> None:
@@ -236,9 +226,7 @@ class WM8960:
         """
         if self._codec.dac_mute:
             return 0.0
-        return map_range(
-            self._codec.dac_volume, DAC_VOLUME_MIN, DAC_VOLUME_MAX, 0.0, 1.0
-        )
+        return map_range(self._codec.dac_volume, DAC_VOLUME_MIN, DAC_VOLUME_MAX, 0.0, 1.0)
 
     @volume.setter
     def volume(self, value: float) -> None:
@@ -246,9 +234,7 @@ class WM8960:
             self._codec.dac_mute = True
         elif self._codec.dac_mute:
             self._codec.dac_mute = False
-        self._codec.dac_volume = map_range(
-            value, 0.0, 1.0, DAC_VOLUME_MIN, DAC_VOLUME_MAX
-        )
+        self._codec.dac_volume = map_range(value, 0.0, 1.0, DAC_VOLUME_MIN, DAC_VOLUME_MAX)
 
     @property
     def headphone(self) -> float:
@@ -285,9 +271,7 @@ class WM8960:
         """
         if not self._codec.speaker:
             return 0.0
-        return map_range(
-            self._codec.speaker_volume, AMP_VOLUME_MIN, AMP_VOLUME_MAX, 0.0, 1.0
-        )
+        return map_range(self._codec.speaker_volume, AMP_VOLUME_MIN, AMP_VOLUME_MAX, 0.0, 1.0)
 
     @speaker.setter
     def speaker(self, value: float) -> None:
@@ -295,9 +279,7 @@ class WM8960:
             self._codec.speaker = False
         elif not self._codec.speaker:
             self._codec.speaker = True
-        self._codec.speaker_volume = map_range(
-            value, 0.0, 1.0, AMP_VOLUME_MIN, AMP_VOLUME_MAX
-        )
+        self._codec.speaker_volume = map_range(value, 0.0, 1.0, AMP_VOLUME_MIN, AMP_VOLUME_MAX)
 
     # 3D Enhance
 
@@ -347,12 +329,8 @@ class WM8960:
         """
         return (
             map_range(self._codec.alc_target, ALC_TARGET_MIN, ALC_TARGET_MAX, 0.0, 1.0),
-            map_range(
-                self._codec.alc_max_gain, ALC_MAX_GAIN_MIN, ALC_MAX_GAIN_MAX, 0.0, 1.0
-            ),
-            map_range(
-                self._codec.alc_min_gain, ALC_MIN_GAIN_MIN, ALC_MIN_GAIN_MAX, 0.0, 1.0
-            ),
+            map_range(self._codec.alc_max_gain, ALC_MAX_GAIN_MIN, ALC_MAX_GAIN_MAX, 0.0, 1.0),
+            map_range(self._codec.alc_min_gain, ALC_MIN_GAIN_MIN, ALC_MIN_GAIN_MAX, 0.0, 1.0),
             (
                 map_range(
                     self._codec.noise_gate_threshold,
@@ -371,17 +349,11 @@ class WM8960:
         if len(value) < 4:
             raise ValueError("Invalid tuple object")
 
-        self._codec.alc_target = map_range(
-            value[0], 0.0, 1.0, ALC_TARGET_MIN, ALC_TARGET_MAX
-        )
+        self._codec.alc_target = map_range(value[0], 0.0, 1.0, ALC_TARGET_MIN, ALC_TARGET_MAX)
 
-        self._codec.alc_max_gain = map_range(
-            value[1], 0.0, 1.0, ALC_MAX_GAIN_MIN, ALC_MAX_GAIN_MAX
-        )
+        self._codec.alc_max_gain = map_range(value[1], 0.0, 1.0, ALC_MAX_GAIN_MIN, ALC_MAX_GAIN_MAX)
 
-        self._codec.alc_min_gain = map_range(
-            value[2], 0.0, 1.0, ALC_MIN_GAIN_MIN, ALC_MIN_GAIN_MAX
-        )
+        self._codec.alc_min_gain = map_range(value[2], 0.0, 1.0, ALC_MIN_GAIN_MIN, ALC_MIN_GAIN_MAX)
 
         if value[3] <= 0.0:
             self._codec.noise_gate = False
