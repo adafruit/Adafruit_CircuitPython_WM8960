@@ -59,10 +59,12 @@ https://github.com/sparkfun/SparkFun_Audio_Codec_Breakout_WM8960/blob/main/Docum
 """
 
 import time
+
 import board
-from analogio import AnalogIn
 from adafruit_simplemath import map_range
-from adafruit_wm8960 import Input, WM8960
+from analogio import AnalogIn
+
+from adafruit_wm8960 import WM8960, Input
 
 analog_in = AnalogIn(board.A0)
 

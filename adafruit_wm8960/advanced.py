@@ -25,16 +25,16 @@ Implementation Notes
 # * Adafruit's Bus Device library: https://github.com/adafruit/Adafruit_CircuitPython_BusDevice
 """
 
-# pylint: disable=too-many-lines
-
 import math
-from busio import I2C
+
 from adafruit_bus_device.i2c_device import I2CDevice
 from adafruit_simplemath import constrain, map_range
+from busio import I2C
 from micropython import const
 
 try:
     from typing import Optional, Type
+
     from circuitpython_typing.device_drivers import I2CDeviceDriver
 except ImportError:
     pass
@@ -253,9 +253,6 @@ Used by the attributes :attr:`WM8960_Advanced.left_headphone_volume`,
 """
 
 
-# pylint: disable=too-few-public-methods
-
-
 class Mic_Input:
     """An enum-like class representing the microphone amplifier (PGA) input modes. Used for the
     attributes :attr:`WM8960_Advanced.left_mic_input`, :attr:`WM8960_Advanced.right_mic_input`, and
@@ -290,9 +287,6 @@ _ALC_ATTACK_MAX = const(10)
 
 # Speaker Boost Gains (DC and AC)
 _SPEAKER_BOOST_GAIN = [0.0, 2.1, 2.9, 3.6, 4.5, 5.1]  # in dB
-
-
-# pylint: disable=too-few-public-methods
 
 
 class Vmid_Mode:
@@ -392,9 +386,6 @@ _REG_DEFAULTS = [
 ]
 
 
-# pylint: disable=protected-access,missing-class-docstring,missing-function-docstring
-
-
 class WOBit:
     def __init__(
         self,
@@ -426,7 +417,7 @@ class WOBit:
 
 
 class WOBits:
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(
         self,
         num_bits: int,
         register_address: int,
@@ -466,10 +457,7 @@ class WOBits:
             i2c.write(obj._registers[self.register_address])
 
 
-# pylint: enable=protected-access,missing-class-docstring,missing-function-docstring
-
-
-class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
+class WM8960_Advanced:
     """Driver for interacting directly with a WM8960 audio codec to control analog and digital audio
     pathways over an I2C connection."""
 
@@ -705,9 +693,9 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
 
     @mic_boost_gain.setter
     def mic_boost_gain(self, value: float) -> None:
-        self._left_mic_boost_gain = (
-            self._right_mic_boost_gain
-        ) = WM8960_Advanced._get_mic_boost_gain(value)
+        self._left_mic_boost_gain = self._right_mic_boost_gain = (
+            WM8960_Advanced._get_mic_boost_gain(value)
+        )
 
     ## Volume
 
@@ -729,9 +717,7 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
 
     @left_mic_volume.setter
     def left_mic_volume(self, value: float) -> None:
-        self._left_mic_volume = round(
-            map_range(value, MIC_GAIN_MIN, MIC_GAIN_MAX, 0, 63)
-        )
+        self._left_mic_volume = round(map_range(value, MIC_GAIN_MIN, MIC_GAIN_MAX, 0, 63))
         self._left_mic_volume_set = True
 
     @property
@@ -746,9 +732,7 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
 
     @right_mic_volume.setter
     def right_mic_volume(self, value: float) -> None:
-        self._right_mic_volume = round(
-            map_range(value, MIC_GAIN_MIN, MIC_GAIN_MAX, 0, 63)
-        )
+        self._right_mic_volume = round(map_range(value, MIC_GAIN_MIN, MIC_GAIN_MAX, 0, 63))
         self._right_mic_volume_set = True
 
     @property
@@ -900,11 +884,7 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
         :default: `None`
         """
         value = max(self._left_input2_boost, self._right_input2_boost)
-        return (
-            None
-            if value == 0
-            else map_range(value, 1, 7, BOOST_GAIN_MIN, BOOST_GAIN_MAX)
-        )
+        return None if value == 0 else map_range(value, 1, 7, BOOST_GAIN_MIN, BOOST_GAIN_MAX)
 
     @input2_boost.setter
     def input2_boost(self, value: float) -> None:
@@ -972,11 +952,7 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
         :default: `None`
         """
         value = max(self._left_input3_boost, self._right_input3_boost)
-        return (
-            None
-            if value == 0
-            else map_range(value, 1, 7, BOOST_GAIN_MIN, BOOST_GAIN_MAX)
-        )
+        return None if value == 0 else map_range(value, 1, 7, BOOST_GAIN_MIN, BOOST_GAIN_MAX)
 
     @input3_boost.setter
     def input3_boost(self, value: float) -> None:
@@ -1145,9 +1121,7 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
 
     @alc_target.setter
     def alc_target(self, value: float) -> None:
-        self._alc_target = round(
-            map_range(value, ALC_TARGET_MIN, ALC_TARGET_MAX, 0, 15)
-        )
+        self._alc_target = round(map_range(value, ALC_TARGET_MIN, ALC_TARGET_MAX, 0, 15))
 
     _alc_max_gain: int = WOBits(3, _REG_ALC1, 4)
 
@@ -1163,9 +1137,7 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
 
     @alc_max_gain.setter
     def alc_max_gain(self, value: float) -> None:
-        self._alc_max_gain = round(
-            map_range(value, ALC_MAX_GAIN_MIN, ALC_MAX_GAIN_MAX, 0, 7)
-        )
+        self._alc_max_gain = round(map_range(value, ALC_MAX_GAIN_MIN, ALC_MAX_GAIN_MAX, 0, 7))
 
     _alc_min_gain: int = WOBits(3, _REG_ALC2, 4)
 
@@ -1181,9 +1153,7 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
 
     @alc_min_gain.setter
     def alc_min_gain(self, value: float) -> None:
-        self._alc_min_gain = round(
-            map_range(value, ALC_MIN_GAIN_MIN, ALC_MIN_GAIN_MAX, 0, 7)
-        )
+        self._alc_min_gain = round(map_range(value, ALC_MIN_GAIN_MIN, ALC_MIN_GAIN_MAX, 0, 7))
 
     _alc_hold: int = WOBits(4, _REG_ALC2, 0)
 
@@ -1207,10 +1177,7 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
         self._alc_hold = (
             round(
                 math.log(
-                    (
-                        constrain(value, ALC_HOLD_TIME_MIN, ALC_HOLD_TIME_MAX)
-                        - ALC_HOLD_TIME_MIN
-                    )
+                    (constrain(value, ALC_HOLD_TIME_MIN, ALC_HOLD_TIME_MAX) - ALC_HOLD_TIME_MIN)
                     / ALC_HOLD_TIME_MIN,
                     2.0,
                 )
@@ -1238,10 +1205,7 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
         self._alc_decay = min(
             round(
                 math.log(
-                    (
-                        constrain(value, ALC_DECAY_TIME_MIN, ALC_DECAY_TIME_MAX)
-                        - ALC_DECAY_TIME_MIN
-                    )
+                    (constrain(value, ALC_DECAY_TIME_MIN, ALC_DECAY_TIME_MAX) - ALC_DECAY_TIME_MIN)
                     / ALC_DECAY_TIME_MIN,
                     2.0,
                 )
@@ -1303,9 +1267,7 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
 
         :default: -76.5
         """
-        return map_range(
-            self._noise_gate_threshold, 0, 31, GATE_THRESHOLD_MIN, GATE_THRESHOLD_MAX
-        )
+        return map_range(self._noise_gate_threshold, 0, 31, GATE_THRESHOLD_MIN, GATE_THRESHOLD_MAX)
 
     @noise_gate_threshold.setter
     def noise_gate_threshold(self, value: float) -> None:
@@ -1353,9 +1315,7 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
 
     @left_dac_volume.setter
     def left_dac_volume(self, value: float) -> None:
-        self._left_dac_volume = round(
-            map_range(value, DAC_VOLUME_MIN, DAC_VOLUME_MAX, 1, 255)
-        )
+        self._left_dac_volume = round(map_range(value, DAC_VOLUME_MIN, DAC_VOLUME_MAX, 1, 255))
         self._left_dac_volume_set = True
 
     _right_dac_volume: int = WOBits(8, _REG_RIGHT_DAC_VOLUME, 0)
@@ -1372,9 +1332,7 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
 
     @right_dac_volume.setter
     def right_dac_volume(self, value: float) -> None:
-        self._right_dac_volume = round(
-            map_range(value, DAC_VOLUME_MIN, DAC_VOLUME_MAX, 1, 255)
-        )
+        self._right_dac_volume = round(map_range(value, DAC_VOLUME_MIN, DAC_VOLUME_MAX, 1, 255))
         self._right_dac_volume_set = True
 
     @property
@@ -1635,9 +1593,7 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
 
         :default: -21.0
         """
-        return map_range(
-            self._left_mic_output_volume, 0, 7, OUTPUT_VOLUME_MAX, OUTPUT_VOLUME_MIN
-        )
+        return map_range(self._left_mic_output_volume, 0, 7, OUTPUT_VOLUME_MAX, OUTPUT_VOLUME_MIN)
 
     @left_mic_output_volume.setter
     def left_mic_output_volume(self, value: float) -> None:
@@ -1655,9 +1611,7 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
 
         :default: -21.0
         """
-        return map_range(
-            self._right_mic_output_volume, 0, 7, OUTPUT_VOLUME_MAX, OUTPUT_VOLUME_MIN
-        )
+        return map_range(self._right_mic_output_volume, 0, 7, OUTPUT_VOLUME_MAX, OUTPUT_VOLUME_MIN)
 
     @right_mic_output_volume.setter
     def right_mic_output_volume(self, value: float) -> None:
@@ -2323,14 +2277,14 @@ class WM8960_Advanced:  # pylint: disable=too-many-instance-attributes,too-many-
         self.base_clock_divider = 4.0
         self.amp_clock_divider = 16.0
 
-        if value in [8000, 12000, 16000, 24000, 32000, 48000]:
+        if value in {8000, 12000, 16000, 24000, 32000, 48000}:
             # SYSCLK = 12.288 MHz
             # DCLK = 768.0k_hz
             self.pll_n = 8
             self.pll_k = 0x3126E8
             self.adc_clock_divider = self.dac_clock_divider = 48000 / value
 
-        elif value in [11025, 22050, 44100]:
+        elif value in {11025, 22050, 44100}:
             # SYSCLK = 11.2896 MHz
             # DCLK = 705.6k_hz
             self.pll_n = 7
